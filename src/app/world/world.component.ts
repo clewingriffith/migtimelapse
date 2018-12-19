@@ -1,6 +1,7 @@
 
 import { AfterViewInit, Component, ElementRef, Input, ViewChild } from '@angular/core';
 import * as THREE from 'three';
+import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
 import { CaveSurvey } from '../cavesurvey';
 
@@ -12,6 +13,7 @@ import { CaveSurvey } from '../cavesurvey';
 export class WorldComponent implements AfterViewInit {
 
   private camera: THREE.PerspectiveCamera;
+  private controls: OrbitControls;
 
   private get canvas() : HTMLCanvasElement {
     return this.canvasRef.nativeElement;
@@ -45,7 +47,7 @@ export class WorldComponent implements AfterViewInit {
   public nearClippingPane: number = 1;
 
   @Input('farClipping')
-  public farClippingPane: number = 10000;
+  public farClippingPane: number = 100000;
 
 
   constructor(private caveloader: CaveLoaderService) {
@@ -60,9 +62,11 @@ export class WorldComponent implements AfterViewInit {
    * Animate the cube
    */
   private animateCube() {
-    this.cube.rotation.z += this.rotationSpeedX;
-    this.cube.rotation.x = -90;
-    //this.cube.rotation.z += this.rotationSpeedY;
+    this.controls.update();
+    //console.log(this.controls.getAzimuthalAngle())
+    //this.cube.rotation.z += this.rotationSpeedX;
+    //this.cube.rotation.x = -90;
+    ////this.cube.rotation.z += this.rotationSpeedY;
   }
 
 
@@ -89,23 +93,34 @@ export class WorldComponent implements AfterViewInit {
 
 */
 
-        survey.surveyStations.forEach( station => { vertices.push(station.x, station.y, station.z)});
+        survey.surveyStations.forEach( station => { vertices.push(station.x, station.z, station.y)});
 
         const vertexArray = new Float32Array(vertices);
         
        // itemSize = 3 because there are 3 values (components) per vertex
         geometry.addAttribute( 'position', new THREE.BufferAttribute( vertexArray, 3 ) );
         geometry.computeBoundingSphere();
-        const c = geometry.boundingSphere.center.negate();
-        geometry.translate(c.x, c.y, c.z);
-        geometry.scale(0.1, 0.1, 0.1);
+
+        const c = geometry.boundingSphere.center;
+        //geometry.translate(c.x, c.y, c.z);
+        //geometry.scale(0.1, 0.1, 0.1);
         // geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         this.cube = new THREE.Points( geometry, material );
 
         // Add cube to scene
         this.scene.add(this.cube);
-        this.camera.lookAt(0,0,0);
-        this.cameraZ = -1000;
+        
+        this.camera.position.set(c.x,c.y+3000,c.z);
+        this.camera.up.set(0,1,0);
+        this.camera.lookAt(c.x,c.y,c.z);
+        this.controls.target = new THREE.Vector3(c.x,c.y,c.z);
+        //this.controls.maxAzimuthAngle = Math.PI / 4;
+        //this.controls.minAzimuthAngle = 0;
+       /* this.controls.maxAzimuthAngle=Math.PI;
+        this.controls.minAzimuthAngle=Math.PI-1;
+        this.controls.maxPolarAngle=Math.PI;
+        this.controls.minPolarAngle=0;*/
+        this.controls.update();
         this.startRenderingLoop();
     });
   
@@ -128,7 +143,12 @@ export class WorldComponent implements AfterViewInit {
       this.nearClippingPane,
       this.farClippingPane
     );
-    this.camera.position.z = this.cameraZ;
+    this.controls = new OrbitControls( this.camera );
+    this.controls.autoRotate=true;
+    this.controls.enablePan=false;
+    this.controls.enableZoom=true;
+    this.controls.autoRotateSpeed=4.0;
+    //this.camera.position.z = this.cameraZ;
   }
 
   private getAspectRatio() {
@@ -148,6 +168,7 @@ export class WorldComponent implements AfterViewInit {
     let component: WorldComponent = this;
     (function render() {
       requestAnimationFrame(render);
+      
       component.animateCube();
       component.renderer.render(component.scene, component.camera);
     }());
