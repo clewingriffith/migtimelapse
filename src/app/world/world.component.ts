@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
 import { CaveSurvey } from '../cavesurvey';
+import { SurveyStation } from '../cavesurvey';
 
 @Component({
   selector: 'app-world',
@@ -22,7 +23,7 @@ export class WorldComponent implements AfterViewInit {
   @ViewChild('canvas')
   private canvasRef: ElementRef<HTMLCanvasElement>;
 
-  private cube: THREE.Points;
+  private legs: THREE.LineSegments;
 
   private renderer: THREE.WebGLRenderer;
 
@@ -75,7 +76,8 @@ export class WorldComponent implements AfterViewInit {
     this.caveloader.read3dFile().subscribe( fileItems => {
         const survey = new CaveSurvey(fileItems);
         // let texture = new THREE.TextureLoader().load(this.texture);
-        var material = new THREE.PointsMaterial( { color: 0xffffff } );
+        //var material = new THREE.PointsMaterial( { color: 0xffffff } );
+        var material = new THREE.LineBasicMaterial( { color: 0xffffff } );
 
         var geometry = new THREE.BufferGeometry();
         
@@ -93,11 +95,17 @@ export class WorldComponent implements AfterViewInit {
 
 */
 
-        survey.surveyStations.forEach( station => { vertices.push(station.x, station.z, station.y)});
+        var surveyStations: SurveyStation[];
+        surveyStations = Object.values(survey.surveyStations) as SurveyStation[];
+        surveyStations.forEach( station => { vertices.push(station.x, station.z, station.y)});
+
+        var legIndices = [];
+        survey.surveyLegs.forEach( leg => { legIndices.push(leg[0].i); legIndices.push(leg[1].i); });
 
         const vertexArray = new Float32Array(vertices);
         
        // itemSize = 3 because there are 3 values (components) per vertex
+        geometry.setIndex(legIndices);
         geometry.addAttribute( 'position', new THREE.BufferAttribute( vertexArray, 3 ) );
         geometry.computeBoundingSphere();
 
@@ -105,12 +113,12 @@ export class WorldComponent implements AfterViewInit {
         //geometry.translate(c.x, c.y, c.z);
         //geometry.scale(0.1, 0.1, 0.1);
         // geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-        this.cube = new THREE.Points( geometry, material );
-
-        // Add cube to scene
-        this.scene.add(this.cube);
         
-        this.camera.position.set(c.x,c.y+3000,c.z);
+        this.legs = new THREE.LineSegments( geometry, material );
+        // Add cube to scene
+        this.scene.add(this.legs);
+        
+        this.camera.position.set(c.x,c.y+1000,c.z);
         this.camera.up.set(0,1,0);
         this.camera.lookAt(c.x,c.y,c.z);
         this.controls.target = new THREE.Vector3(c.x,c.y,c.z);

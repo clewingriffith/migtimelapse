@@ -12,6 +12,7 @@ declare var DataStream: any;
 export class CaveLoaderService {
 
   private labelBuffer = '';
+  private style;
 
   constructor( private http: HttpClient) {
     //Add on a function for reading a string terminated by an arbitrary character.
@@ -154,24 +155,34 @@ export class CaveLoaderService {
   }
 
   private readItem(stream) {
+    
     const code = stream.readUint8();
     let item = { };
     
     if(code == 0x00) {
-        item['codetype'] = 'STOP';
+        if(this.style === 'STYLE_NORMAL') {
+          item['codetype'] = 'STOP';
+        } else {
+          item['codetype'] = 'STYLE_NORMAL';
+          this.style = 'STYLE_NORMAL';
+        }
     } else if (code == 0x01) {
         item['codetype'] = 'STYLE_DIVING';
+        this.style = 'STYLE_DIVING';
     } else if (code == 0x02) {
         item['codetype'] = 'STYLE_CARTESIAN';
+        this.style = 'STYLE_CARTESIAN';
     } else if (code == 0x03) {
         item['codetype'] = 'STYLE_CYLPOLAR';
+        this.style = 'STYLE_CYLPOLAR';
     } else if (code == 0x04) {
         item['codetype'] = 'STYLE_NOSURVEY';
+        this.style = 'STYLE_NOSURVEY';
     } else if (code == 0x0f) {
       item['codetype'] = 'MOVE';
-      item['x'] = 0.01*parseInt(stream.readInt32());
-      item['y'] = 0.01*parseInt(stream.readInt32());
-      item['z'] = 0.01*parseInt(stream.readInt32());
+      item['x'] = this.getCM(stream);
+      item['y'] = this.getCM(stream);
+      item['z'] = this.getCM(stream);
     } else if (code == 0x10) {
       item['codetype'] = 'DATE';
     } else if (code == 0x11) {
@@ -247,16 +258,16 @@ export class CaveLoaderService {
       } else {
         item['label'] = this.readLabel(stream);
       }
-        item['x'] = 0.01*parseInt(stream.readInt32());
-        item['y'] = 0.01*parseInt(stream.readInt32());
-        item['z'] = 0.01*parseInt(stream.readInt32());
+        item['x'] = this.getCM(stream);
+        item['y'] = this.getCM(stream);
+        item['z'] = this.getCM(stream);
 
     } else if(code >= 0x80 && code <=0xff) {
         item['codetype'] = 'LABEL';
         item['label'] = this.readLabel(stream);
-        item['x'] = 0.01*parseInt(stream.readInt32());
-        item['y'] = 0.01*parseInt(stream.readInt32());
-        item['z'] = 0.01*parseInt(stream.readInt32());
+        item['x'] = this.getCM(stream);
+        item['y'] = this.getCM(stream);
+        item['z'] = this.getCM(stream);
 
         const flag = (code & 0x7f);
         if(flag) {
@@ -289,6 +300,10 @@ export class CaveLoaderService {
     }
     return item;
     
+  }
+
+  private getCM(stream) {
+    return (0.01*parseInt(stream.readInt32())).toFixed(2);
   }
 
   public read3dFile(): Observable<any[]> {
