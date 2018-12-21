@@ -303,7 +303,7 @@ export class CaveLoaderService {
   }
 
   private getCM(stream) {
-    return (0.01*parseInt(stream.readInt32())).toFixed(2);
+    return parseFloat((0.01*parseInt(stream.readInt32())).toFixed(2));
   }
 
   public read3dFile(): Observable<any[]> {
