@@ -32,6 +32,7 @@ export class WorldComponent implements AfterViewInit {
 
 
   private scene: THREE.Scene;
+  private group: THREE.Object3D;
 
   private numLegsToDisplay = 0;
 
@@ -77,7 +78,11 @@ export class WorldComponent implements AfterViewInit {
   }
 
 
-  private createMountainPointcloud() {
+  // pass a tile name like 404_123
+  // This reads the dem data for the tile and creates geometry for it.
+  // it also loads appropriate texture information
+
+  private createMountainPointcloud(tile: string) {
     this.demloader.readDEMData().subscribe( arraybuffer => {
       const geometry = new THREE.BufferGeometry();
       //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
@@ -133,7 +138,7 @@ uvs.push( ix / gridX );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
       var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
-      var demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture, side: THREE.DoubleSide } );
+      var demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture } );
       var mesh = new THREE.Mesh( geometry, demMeshMaterial );
       var demPointCloud = new THREE.Points(geometry, demMaterial);
       geometry.computeBoundingBox();
@@ -141,23 +146,24 @@ uvs.push( ix / gridX );
       
       //this.scene.add(demPointCloud);
   //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
-      this.scene.add(mesh);
+      this.group.add(mesh);
 
       var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
-      this.scene.add( skylight );
+      this.group.add( skylight );
       //var skylight = new THREE.AmbientLight( 0x87cefa ); // sky light ambient
       //this.scene.add( skylight );
-      var sunLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+      var sunLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
       //sunLight.position = new THREE.Vector3(0,10000,0);
       
       //var sunLight = new THREE.SpotLight(0xffffff);
       //sunLight.position.set(geometry.boundingSphere.center.x, geometry.boundingSphere.center.y+10000,geometry.boundingSphere.center.z);
       //sunLight.target = mesh;
-      this.scene.add(sunLight);
+      this.group.add(sunLight);
 
 
-
-
+      var axisHelper = new THREE.AxesHelper(2000);
+      axisHelper.position.set(404000,123000,0);
+      this.group.add(axisHelper);
 
 
     });
@@ -182,7 +188,7 @@ uvs.push( ix / gridX );
         surveyStations = Object.values(this.survey.surveyStations) as SurveyStation[];
         surveyStations.forEach( station => { 
           //if(station.flags.includes("UNDERGROUND")) {
-            this.vertices.push(station.x, station.z, station.y);
+            this.vertices.push(station.x, station.y, station.z);
           //}
         });
 
@@ -220,12 +226,18 @@ uvs.push( ix / gridX );
         
         this.legs = new THREE.LineSegments( nonindexed, material );
         // Add cube to scene
-        this.scene.add(this.legs);
+        this.group.add(this.legs);
         var box = new THREE.BoxHelper(this.legs, new THREE.Color('red'));
-        this.scene.add(box);
+        this.group.add(box);
 
-        this.camera.position.set(c.x,c.y+nonindexed.boundingSphere.radius,c.z);
-        this.camera.up.set(0,1,0);
+
+        var max = new THREE.IcosahedronGeometry(50,1);
+        var maxMesh = new THREE.Mesh(max, new THREE.MeshBasicMaterial({ color: 0xff0000}));
+        max.translate(405000, 122000, 2000);
+        this.group.add(maxMesh);
+
+        this.camera.position.set(c.x,c.y,c.z+nonindexed.boundingSphere.radius);
+        this.camera.up.set(0,0,1);
         this.camera.lookAt(c.x,c.y,c.z);
         this.controls.target = new THREE.Vector3(c.x,c.y,c.z);
         //this.controls.maxAzimuthAngle = Math.PI / 4;
@@ -247,7 +259,12 @@ uvs.push( ix / gridX );
    */
   private createScene() {
     /* Scene */
+    THREE.Object3D.DefaultUp=new THREE.Vector3(0,0,1);
     this.scene = new THREE.Scene();
+    this.group = new THREE.Object3D();
+    //this.group.rotation.x = -Math.PI / 2;
+    
+    this.scene.add(this.group);
 
     /* Camera */
     let aspectRatio = this.getAspectRatio();
@@ -313,7 +330,7 @@ uvs.push( ix / gridX );
    */
   public ngAfterViewInit() {
     this.createScene();
-    this.createMountainPointcloud();
+    this.createMountainPointcloud("404_123");
     this.createGeometry();
     //this.startRenderingLoop();
   }

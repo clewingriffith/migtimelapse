@@ -19,7 +19,7 @@ a100mArray = array.array('f')
 valid100mIndices = [x*100000+y*100 for x in range(10) for y in range(10)]
 
 valid10mIndices = [x*10000+y*10 for x in range(100) for y in range(100)]
-print(valid10mIndices)
+#print(valid10mIndices)
 
 #The points in the .asc file are not actually arranged in a 1000x1000 grid.
 #instead they appear to be in chunks 512 in the y(2nd coord) direction
@@ -30,8 +30,8 @@ print(valid10mIndices)
 for idx,line in enumerate(sorted(inputFile.readlines(), key=lambda l:l[0:6])):
     x,y,z=line.split(';')
     a1mArray.append(float(x))
-    a1mArray.append(float(z)) #deliberatly the wrong way round because y is up
-    a1mArray.append(float(y))
+    a1mArray.append(float(y)) 
+    a1mArray.append(float(z))
 
 for idx in valid10mIndices:
     #print(a1mArray[3*idx],a1mArray[3*idx+1],a1mArray[3*idx+2])
