@@ -3,6 +3,7 @@ import { AfterViewInit, Component, ElementRef, Input, ViewChild } from '@angular
 import * as THREE from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
+import { DEMLoaderService } from '../demloader.service';
 import { CaveSurvey } from '../cavesurvey';
 import { SurveyStation } from '../cavesurvey';
 
@@ -26,6 +27,9 @@ export class WorldComponent implements AfterViewInit {
   private legs: THREE.LineSegments;
   private vertices = [];
   private renderer: THREE.WebGLRenderer;
+
+  private demPointCloud: THREE.Points;
+
 
   private scene: THREE.Scene;
 
@@ -52,7 +56,7 @@ export class WorldComponent implements AfterViewInit {
   public farClippingPane: number = 100000;
 
 
-  constructor(private caveloader: CaveLoaderService) {
+  constructor(private caveloader: CaveLoaderService, private demloader: DEMLoaderService) {
 
    }
 
@@ -61,21 +65,104 @@ export class WorldComponent implements AfterViewInit {
   /* STAGING, ANIMATION, AND RENDERING */
 
   /**
-   * Animate the cube
+   * Animate the cave survey, drawing progressively more survey legs
    */
-  private animateCube() {
+  private animateSurvey() {
     this.numLegsToDisplay+=10;
     this.numLegsToDisplay = Math.min(this.numLegsToDisplay, this.survey.surveyLegs.length);
     var geo = this.legs.geometry as THREE.BufferGeometry;
     geo.setDrawRange(0,this.numLegsToDisplay);
     this.controls.update();
     //console.log(this.controls.getAzimuthalAngle())
-    //this.cube.rotation.z += this.rotationSpeedX;
-    //this.cube.rotation.x = -90;
-    ////this.cube.rotation.z += this.rotationSpeedY;
   }
 
 
+  private createMountainPointcloud() {
+    this.demloader.readDEMData().subscribe( arraybuffer => {
+      const geometry = new THREE.BufferGeometry();
+      //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
+      const demPointArray = new Float32Array(arraybuffer);
+
+      var texture = new THREE.TextureLoader().load( "assets/404_123.png" );
+      
+      //build out indices for mesh version
+      var indices = [];
+      var uvs = [];
+      var normals = [];
+      var ix; 
+      var iy;
+      var gridX = 999;
+	    var gridY = 999;
+
+	    var gridX1 = gridX + 1;
+	    var gridY1 = gridY + 1;
+      for ( iy=0; iy<gridY; iy++ ) {
+        for ( ix=0; ix<gridX; ix++ ) {
+          var a = ix + gridX1  * iy;
+          var b = ix + gridX1  * ( iy + 1 );
+          var c = ( ix + 1 ) + gridX1  * ( iy + 1 );
+          var d = ( ix + 1 ) + gridX1  * iy;
+
+          // faces
+          indices.push( a, b, d );
+          indices.push( b, c, d );
+
+        }
+      }
+      
+var segment_width = 1000 / gridX;
+	var segment_height = 1000 / gridY;
+var width_half = 500;
+	var height_half = 500;
+      for ( iy = 0; iy < gridY1; iy ++ ) {
+		    var y = iy * segment_height - height_half;
+  		  for ( ix = 0; ix < gridX1; ix ++ ) {
+	    		var x = ix * segment_width - width_half;
+
+			    
+			    uvs.push(  ( iy / gridY ) );
+uvs.push( ix / gridX );
+  		  }
+
+	    }
+
+      //indices.push(0,1,100);
+      
+      geometry.setIndex(indices);
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( demPointArray, 3 ) );
+      geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+      geometry.computeVertexNormals();
+      var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
+      var demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture, side: THREE.DoubleSide } );
+      var mesh = new THREE.Mesh( geometry, demMeshMaterial );
+      var demPointCloud = new THREE.Points(geometry, demMaterial);
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      
+      //this.scene.add(demPointCloud);
+  //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
+      this.scene.add(mesh);
+
+      var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
+      this.scene.add( skylight );
+      //var skylight = new THREE.AmbientLight( 0x87cefa ); // sky light ambient
+      //this.scene.add( skylight );
+      var sunLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+      //sunLight.position = new THREE.Vector3(0,10000,0);
+      
+      //var sunLight = new THREE.SpotLight(0xffffff);
+      //sunLight.position.set(geometry.boundingSphere.center.x, geometry.boundingSphere.center.y+10000,geometry.boundingSphere.center.z);
+      //sunLight.target = mesh;
+      this.scene.add(sunLight);
+
+
+
+
+
+
+    });
+  }
+  
   private createGeometry() {
 
     this.caveloader.read3dFile().subscribe( fileItems => {
@@ -89,19 +176,6 @@ export class WorldComponent implements AfterViewInit {
 
         var geometry = new THREE.BufferGeometry();
         
-        
-        
-/*        var vertexArray = new Float32Array( [
-          -10.0, -10.0,  10.0,
-          10.0, -10.0,  10.0,
-          10.0,  10.0,  10.0,
-
-          10.0,  10.0,  10.0,
-          -10.0,  10.0,  10.0,
-          -10.0, -10.0,  10.0
-        ] );
-
-*/
 
         var surveyStations: SurveyStation[];
         //Don't blindly push the stations. Some of them are fixed points with incorrect locations
@@ -209,7 +283,7 @@ export class WorldComponent implements AfterViewInit {
     (function render() {
       requestAnimationFrame(render);
       
-      component.animateCube();
+      component.animateSurvey();
       component.renderer.render(component.scene, component.camera);
     }());
   }
@@ -239,6 +313,7 @@ export class WorldComponent implements AfterViewInit {
    */
   public ngAfterViewInit() {
     this.createScene();
+    this.createMountainPointcloud();
     this.createGeometry();
     //this.startRenderingLoop();
   }

@@ -4,6 +4,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { WorldComponent } from './world/world.component';
 import { CaveLoaderService } from './caveloader.service';
+import { DEMLoaderService } from './demloader.service';
 
 @NgModule({
   declarations: [
@@ -14,7 +15,7 @@ import { CaveLoaderService } from './caveloader.service';
     BrowserModule,
     HttpClientModule
   ],
-  providers: [CaveLoaderService],
+  providers: [CaveLoaderService, DEMLoaderService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
