@@ -81,26 +81,26 @@ export class WorldComponent implements AfterViewInit {
   // pass a tile name like 404_123
   // This reads the dem data for the tile and creates geometry for it.
   // it also loads appropriate texture information
-
-  private createMountainPointcloud(tile: string) {
-    this.demloader.readDEMData().subscribe( arraybuffer => {
+  // resolution should be 1 for 1m resolution, 10 for 10m resolution, 100 for 100m resolution
+  private createMountainPointcloud(tile: string, resolution: number) {
+    this.demloader.readDEMData(tile, resolution).subscribe( arraybuffer => {
       const geometry = new THREE.BufferGeometry();
       //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
       const demPointArray = new Float32Array(arraybuffer);
 
-      var texture = new THREE.TextureLoader().load( "assets/404_123.png" );
-      
+      var texture = new THREE.TextureLoader().load( 'assets/' + tile + '.png' );
+      const grid_width = 1000/resolution;
       //build out indices for mesh version
       var indices = [];
       var uvs = [];
       var normals = [];
       var ix; 
       var iy;
-      var gridX = 999;
-	    var gridY = 999;
+      const gridX = grid_width - 1;
+	    const gridY = grid_width - 1;
 
-	    var gridX1 = gridX + 1;
-	    var gridY1 = gridY + 1;
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
       for ( iy=0; iy<gridY; iy++ ) {
         for ( ix=0; ix<gridX; ix++ ) {
           var a = ix + gridX1  * iy;
@@ -138,7 +138,7 @@ uvs.push( ix / gridX );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
       var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
-      var demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture } );
+      var demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture,  wireframe: false } );
       var mesh = new THREE.Mesh( geometry, demMeshMaterial );
       var demPointCloud = new THREE.Points(geometry, demMaterial);
       geometry.computeBoundingBox();
@@ -148,22 +148,8 @@ uvs.push( ix / gridX );
   //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
       this.group.add(mesh);
 
-      var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
-      this.group.add( skylight );
-      //var skylight = new THREE.AmbientLight( 0x87cefa ); // sky light ambient
-      //this.scene.add( skylight );
-      var sunLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
-      //sunLight.position = new THREE.Vector3(0,10000,0);
-      
-      //var sunLight = new THREE.SpotLight(0xffffff);
-      //sunLight.position.set(geometry.boundingSphere.center.x, geometry.boundingSphere.center.y+10000,geometry.boundingSphere.center.z);
-      //sunLight.target = mesh;
-      this.group.add(sunLight);
 
 
-      var axisHelper = new THREE.AxesHelper(2000);
-      axisHelper.position.set(404000,123000,0);
-      this.group.add(axisHelper);
 
 
     });
@@ -231,11 +217,6 @@ uvs.push( ix / gridX );
         this.group.add(box);
 
 
-        var max = new THREE.IcosahedronGeometry(50,1);
-        var maxMesh = new THREE.Mesh(max, new THREE.MeshBasicMaterial({ color: 0xff0000}));
-        max.translate(405000, 122000, 2000);
-        this.group.add(maxMesh);
-
         this.camera.position.set(c.x,c.y,c.z+nonindexed.boundingSphere.radius);
         this.camera.up.set(0,0,1);
         this.camera.lookAt(c.x,c.y,c.z);
@@ -280,6 +261,16 @@ uvs.push( ix / gridX );
     this.controls.enableZoom=true;
     this.controls.autoRotateSpeed=4.0;
     //this.camera.position.z = this.cameraZ;
+
+      var axisHelper = new THREE.AxesHelper(2000);
+      axisHelper.position.set(404000,123000,0);
+      this.group.add(axisHelper);
+
+
+      var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
+      this.group.add( skylight );
+      var sunLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
+      this.group.add(sunLight);
   }
 
   private getAspectRatio() {
@@ -330,8 +321,19 @@ uvs.push( ix / gridX );
    */
   public ngAfterViewInit() {
     this.createScene();
-    this.createMountainPointcloud("404_123");
+    this.createMountainPointcloud("403_122", 1);
+    this.createMountainPointcloud("403_123", 1);
+    //this.createMountainPointcloud("403_124", 10);
+    this.createMountainPointcloud("404_122", 1);
+    this.createMountainPointcloud("404_123", 1);
+    this.createMountainPointcloud("404_124", 1);
+    this.createMountainPointcloud("405_122", 1);
+    this.createMountainPointcloud("405_123", 1);
+    this.createMountainPointcloud("405_124", 1);
+    this.createMountainPointcloud("406_122", 1);
+    this.createMountainPointcloud("406_123", 1);
+    this.createMountainPointcloud("406_124", 1);
     this.createGeometry();
-    //this.startRenderingLoop();
+        //this.startRenderingLoop();
   }
 }
