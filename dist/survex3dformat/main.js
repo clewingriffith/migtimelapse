@@ -768,8 +768,7 @@ var WorldComponent = /** @class */ (function () {
             // let texture = new THREE.TextureLoader().load(this.texture);
             //var material = new THREE.PointsMaterial( { color: 0xffffff } );
             var material = new three__WEBPACK_IMPORTED_MODULE_1__["LineBasicMaterial"]({
-                color: 0xffffff,
-                linewidth: 40
+                color: 0xffffff
             });
             var geometry = new three__WEBPACK_IMPORTED_MODULE_1__["BufferGeometry"]();
             var surveyStations;
