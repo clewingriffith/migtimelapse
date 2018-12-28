@@ -1,9 +1,9 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["main"],{
 
-/***/ "../../../src/$$_lazy_route_resource lazy recursive":
-/*!******************************************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/$$_lazy_route_resource lazy namespace object ***!
-  \******************************************************************************************************/
+/***/ "./src/$$_lazy_route_resource lazy recursive":
+/*!**********************************************************!*\
+  !*** ./src/$$_lazy_route_resource lazy namespace object ***!
+  \**********************************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -19,14 +19,14 @@ function webpackEmptyAsyncContext(req) {
 webpackEmptyAsyncContext.keys = function() { return []; };
 webpackEmptyAsyncContext.resolve = webpackEmptyAsyncContext;
 module.exports = webpackEmptyAsyncContext;
-webpackEmptyAsyncContext.id = "../../../src/$$_lazy_route_resource lazy recursive";
+webpackEmptyAsyncContext.id = "./src/$$_lazy_route_resource lazy recursive";
 
 /***/ }),
 
-/***/ "../../../src/app/app.component.css":
-/*!*******************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/app.component.css ***!
-  \*******************************************************************************/
+/***/ "./src/app/app.component.css":
+/*!***********************************!*\
+  !*** ./src/app/app.component.css ***!
+  \***********************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -34,10 +34,10 @@ module.exports = ""
 
 /***/ }),
 
-/***/ "../../../src/app/app.component.html":
-/*!********************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/app.component.html ***!
-  \********************************************************************************/
+/***/ "./src/app/app.component.html":
+/*!************************************!*\
+  !*** ./src/app/app.component.html ***!
+  \************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -45,17 +45,17 @@ module.exports = "<!--The content below is only a placeholder and can be replace
 
 /***/ }),
 
-/***/ "../../../src/app/app.component.ts":
-/*!******************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/app.component.ts ***!
-  \******************************************************************************/
+/***/ "./src/app/app.component.ts":
+/*!**********************************!*\
+  !*** ./src/app/app.component.ts ***!
+  \**********************************/
 /*! exports provided: AppComponent */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AppComponent", function() { return AppComponent; });
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -72,8 +72,8 @@ var AppComponent = /** @class */ (function () {
     AppComponent = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
             selector: 'app-root',
-            template: __webpack_require__(/*! ./app.component.html */ "../../../src/app/app.component.html"),
-            styles: [__webpack_require__(/*! ./app.component.css */ "../../../src/app/app.component.css")]
+            template: __webpack_require__(/*! ./app.component.html */ "./src/app/app.component.html"),
+            styles: [__webpack_require__(/*! ./app.component.css */ "./src/app/app.component.css")]
         })
     ], AppComponent);
     return AppComponent;
@@ -83,23 +83,23 @@ var AppComponent = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/app/app.module.ts":
-/*!***************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/app.module.ts ***!
-  \***************************************************************************/
+/***/ "./src/app/app.module.ts":
+/*!*******************************!*\
+  !*** ./src/app/app.module.ts ***!
+  \*******************************/
 /*! exports provided: AppModule */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AppModule", function() { return AppModule; });
-/* harmony import */ var _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/platform-browser */ "../../../node_modules/@angular/platform-browser/fesm5/platform-browser.js");
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/common/http */ "../../../node_modules/@angular/common/fesm5/http.js");
-/* harmony import */ var _app_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./app.component */ "../../../src/app/app.component.ts");
-/* harmony import */ var _world_world_component__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./world/world.component */ "../../../src/app/world/world.component.ts");
-/* harmony import */ var _caveloader_service__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./caveloader.service */ "../../../src/app/caveloader.service.ts");
-/* harmony import */ var _demloader_service__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./demloader.service */ "../../../src/app/demloader.service.ts");
+/* harmony import */ var _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/platform-browser */ "./node_modules/@angular/platform-browser/fesm5/platform-browser.js");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/common/http */ "./node_modules/@angular/common/fesm5/http.js");
+/* harmony import */ var _app_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./app.component */ "./src/app/app.component.ts");
+/* harmony import */ var _world_world_component__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./world/world.component */ "./src/app/world/world.component.ts");
+/* harmony import */ var _caveloader_service__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./caveloader.service */ "./src/app/caveloader.service.ts");
+/* harmony import */ var _demloader_service__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./demloader.service */ "./src/app/demloader.service.ts");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -137,19 +137,19 @@ var AppModule = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/app/caveloader.service.ts":
-/*!***********************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/caveloader.service.ts ***!
-  \***********************************************************************************/
+/***/ "./src/app/caveloader.service.ts":
+/*!***************************************!*\
+  !*** ./src/app/caveloader.service.ts ***!
+  \***************************************/
 /*! exports provided: CaveLoaderService */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CaveLoaderService", function() { return CaveLoaderService; });
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "../../../node_modules/@angular/common/fesm5/http.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/operators */ "../../../node_modules/rxjs/_esm5/operators/index.js");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "./node_modules/@angular/common/fesm5/http.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/_esm5/operators/index.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -485,10 +485,10 @@ var CaveLoaderService = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/app/cavesurvey.ts":
-/*!***************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/cavesurvey.ts ***!
-  \***************************************************************************/
+/***/ "./src/app/cavesurvey.ts":
+/*!*******************************!*\
+  !*** ./src/app/cavesurvey.ts ***!
+  \*******************************/
 /*! exports provided: SurveyStation, CaveSurvey */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -566,18 +566,18 @@ var CaveSurvey = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/app/demloader.service.ts":
-/*!**********************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/demloader.service.ts ***!
-  \**********************************************************************************/
+/***/ "./src/app/demloader.service.ts":
+/*!**************************************!*\
+  !*** ./src/app/demloader.service.ts ***!
+  \**************************************/
 /*! exports provided: DEMLoaderService */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "DEMLoaderService", function() { return DEMLoaderService; });
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "../../../node_modules/@angular/common/fesm5/http.js");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "./node_modules/@angular/common/fesm5/http.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -612,10 +612,10 @@ var DEMLoaderService = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/app/world/world.component.css":
-/*!***************************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/world/world.component.css ***!
-  \***************************************************************************************/
+/***/ "./src/app/world/world.component.css":
+/*!*******************************************!*\
+  !*** ./src/app/world/world.component.css ***!
+  \*******************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -623,10 +623,10 @@ module.exports = "canvas {\r\n    width: 100%;\r\n    height: 100%;\r\n}\r\n"
 
 /***/ }),
 
-/***/ "../../../src/app/world/world.component.html":
-/*!****************************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/world/world.component.html ***!
-  \****************************************************************************************/
+/***/ "./src/app/world/world.component.html":
+/*!********************************************!*\
+  !*** ./src/app/world/world.component.html ***!
+  \********************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -634,23 +634,23 @@ module.exports = "<canvas #canvas (window:resize)=\"onResize($event)\"></canvas>
 
 /***/ }),
 
-/***/ "../../../src/app/world/world.component.ts":
-/*!**************************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/app/world/world.component.ts ***!
-  \**************************************************************************************/
+/***/ "./src/app/world/world.component.ts":
+/*!******************************************!*\
+  !*** ./src/app/world/world.component.ts ***!
+  \******************************************/
 /*! exports provided: WorldComponent */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "WorldComponent", function() { return WorldComponent; });
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "../../../node_modules/three/build/three.module.js");
-/* harmony import */ var three_orbitcontrols_ts__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three-orbitcontrols-ts */ "../../../node_modules/three-orbitcontrols-ts/dist/index.js");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_orbitcontrols_ts__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three-orbitcontrols-ts */ "./node_modules/three-orbitcontrols-ts/dist/index.js");
 /* harmony import */ var three_orbitcontrols_ts__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(three_orbitcontrols_ts__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _caveloader_service__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../caveloader.service */ "../../../src/app/caveloader.service.ts");
-/* harmony import */ var _demloader_service__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../demloader.service */ "../../../src/app/demloader.service.ts");
-/* harmony import */ var _cavesurvey__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../cavesurvey */ "../../../src/app/cavesurvey.ts");
+/* harmony import */ var _caveloader_service__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../caveloader.service */ "./src/app/caveloader.service.ts");
+/* harmony import */ var _demloader_service__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../demloader.service */ "./src/app/demloader.service.ts");
+/* harmony import */ var _cavesurvey__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../cavesurvey */ "./src/app/cavesurvey.ts");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -929,8 +929,8 @@ var WorldComponent = /** @class */ (function () {
     WorldComponent = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
             selector: 'app-world',
-            template: __webpack_require__(/*! ./world.component.html */ "../../../src/app/world/world.component.html"),
-            styles: [__webpack_require__(/*! ./world.component.css */ "../../../src/app/world/world.component.css")]
+            template: __webpack_require__(/*! ./world.component.html */ "./src/app/world/world.component.html"),
+            styles: [__webpack_require__(/*! ./world.component.css */ "./src/app/world/world.component.css")]
         }),
         __metadata("design:paramtypes", [_caveloader_service__WEBPACK_IMPORTED_MODULE_3__["CaveLoaderService"], _demloader_service__WEBPACK_IMPORTED_MODULE_4__["DEMLoaderService"]])
     ], WorldComponent);
@@ -941,10 +941,10 @@ var WorldComponent = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "../../../src/environments/environment.ts":
-/*!*************************************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/environments/environment.ts ***!
-  \*************************************************************************************/
+/***/ "./src/environments/environment.ts":
+/*!*****************************************!*\
+  !*** ./src/environments/environment.ts ***!
+  \*****************************************/
 /*! exports provided: environment */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -969,19 +969,19 @@ var environment = {
 
 /***/ }),
 
-/***/ "../../../src/main.ts":
-/*!*****************************************************************!*\
-  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/main.ts ***!
-  \*****************************************************************/
+/***/ "./src/main.ts":
+/*!*********************!*\
+  !*** ./src/main.ts ***!
+  \*********************/
 /*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "../../../node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var _angular_platform_browser_dynamic__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/platform-browser-dynamic */ "../../../node_modules/@angular/platform-browser-dynamic/fesm5/platform-browser-dynamic.js");
-/* harmony import */ var _app_app_module__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./app/app.module */ "../../../src/app/app.module.ts");
-/* harmony import */ var _environments_environment__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./environments/environment */ "../../../src/environments/environment.ts");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
+/* harmony import */ var _angular_platform_browser_dynamic__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/platform-browser-dynamic */ "./node_modules/@angular/platform-browser-dynamic/fesm5/platform-browser-dynamic.js");
+/* harmony import */ var _app_app_module__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./app/app.module */ "./src/app/app.module.ts");
+/* harmony import */ var _environments_environment__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./environments/environment */ "./src/environments/environment.ts");
 
 
 
@@ -996,13 +996,13 @@ Object(_angular_platform_browser_dynamic__WEBPACK_IMPORTED_MODULE_1__["platformB
 /***/ }),
 
 /***/ 0:
-/*!***********************************************************************!*\
-  !*** multi C:/Users/clewin/Documents/Clewin/migtimelapse/src/main.ts ***!
-  \***********************************************************************/
+/*!***************************!*\
+  !*** multi ./src/main.ts ***!
+  \***************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Users\clewin\Documents\Clewin\migtimelapse\src\main.ts */"../../../src/main.ts");
+module.exports = __webpack_require__(/*! C:\Users\clewin\Documents\Clewin\migtimelapse\src\main.ts */"./src/main.ts");
 
 
 /***/ })
