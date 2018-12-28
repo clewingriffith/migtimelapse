@@ -1,9 +1,9 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["styles"],{
 
-/***/ "./node_modules/raw-loader/index.js!./node_modules/postcss-loader/lib/index.js?!./src/styles.css":
-/*!**********************************************************************************************!*\
-  !*** ./node_modules/raw-loader!./node_modules/postcss-loader/lib??embedded!./src/styles.css ***!
-  \**********************************************************************************************/
+/***/ "../../../node_modules/raw-loader/index.js!../../../node_modules/postcss-loader/lib/index.js?!../../../src/styles.css":
+/*!**********************************************************************************************************************************************************************************************************************************!*\
+  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/node_modules/raw-loader!C:/Users/clewin/Documents/Clewin/migtimelapse/node_modules/postcss-loader/lib??embedded!C:/Users/clewin/Documents/Clewin/migtimelapse/src/styles.css ***!
+  \**********************************************************************************************************************************************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -11,10 +11,10 @@ module.exports = "/* You can add global styles to this file, and also import oth
 
 /***/ }),
 
-/***/ "./node_modules/style-loader/lib/addStyles.js":
-/*!****************************************************!*\
-  !*** ./node_modules/style-loader/lib/addStyles.js ***!
-  \****************************************************/
+/***/ "../../../node_modules/style-loader/lib/addStyles.js":
+/*!************************************************************************************************!*\
+  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/node_modules/style-loader/lib/addStyles.js ***!
+  \************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -81,7 +81,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(/*! ./urls */ "./node_modules/style-loader/lib/urls.js");
+var	fixUrls = __webpack_require__(/*! ./urls */ "../../../node_modules/style-loader/lib/urls.js");
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -402,10 +402,10 @@ function updateLink (link, options, obj) {
 
 /***/ }),
 
-/***/ "./node_modules/style-loader/lib/urls.js":
-/*!***********************************************!*\
-  !*** ./node_modules/style-loader/lib/urls.js ***!
-  \***********************************************/
+/***/ "../../../node_modules/style-loader/lib/urls.js":
+/*!*******************************************************************************************!*\
+  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/node_modules/style-loader/lib/urls.js ***!
+  \*******************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -502,15 +502,15 @@ module.exports = function (css) {
 
 /***/ }),
 
-/***/ "./src/styles.css":
-/*!************************!*\
-  !*** ./src/styles.css ***!
-  \************************/
+/***/ "../../../src/styles.css":
+/*!********************************************************************!*\
+  !*** C:/Users/clewin/Documents/Clewin/migtimelapse/src/styles.css ***!
+  \********************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 
-var content = __webpack_require__(/*! !../node_modules/raw-loader!../node_modules/postcss-loader/lib??embedded!./styles.css */ "./node_modules/raw-loader/index.js!./node_modules/postcss-loader/lib/index.js?!./src/styles.css");
+var content = __webpack_require__(/*! !../node_modules/raw-loader!../node_modules/postcss-loader/lib??embedded!./styles.css */ "../../../node_modules/raw-loader/index.js!../../../node_modules/postcss-loader/lib/index.js?!../../../src/styles.css");
 
 if(typeof content === 'string') content = [[module.i, content, '']];
 
@@ -524,7 +524,7 @@ var options = {"hmr":true}
 options.transform = transform
 options.insertInto = undefined;
 
-var update = __webpack_require__(/*! ../node_modules/style-loader/lib/addStyles.js */ "./node_modules/style-loader/lib/addStyles.js")(content, options);
+var update = __webpack_require__(/*! ../node_modules/style-loader/lib/addStyles.js */ "../../../node_modules/style-loader/lib/addStyles.js")(content, options);
 
 if(content.locals) module.exports = content.locals;
 
@@ -533,13 +533,13 @@ if(false) {}
 /***/ }),
 
 /***/ 2:
-/*!******************************!*\
-  !*** multi ./src/styles.css ***!
-  \******************************/
+/*!**************************************************************************!*\
+  !*** multi C:/Users/clewin/Documents/Clewin/migtimelapse/src/styles.css ***!
+  \**************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Users\clewin\Documents\Clewin\migtimelapse\src\styles.css */"./src/styles.css");
+module.exports = __webpack_require__(/*! C:\Users\clewin\Documents\Clewin\migtimelapse\src\styles.css */"../../../src/styles.css");
 
 
 /***/ })
