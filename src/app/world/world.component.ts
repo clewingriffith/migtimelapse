@@ -163,8 +163,7 @@ uvs.push( ix / gridX );
         // let texture = new THREE.TextureLoader().load(this.texture);
         //var material = new THREE.PointsMaterial( { color: 0xffffff } );
         var material = new THREE.LineBasicMaterial( { 
-          color: 0xffffff,
-          linewidth: 40
+          color: 0xffffff
          } );
 
         var geometry = new THREE.BufferGeometry();
