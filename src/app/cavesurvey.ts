@@ -19,16 +19,45 @@ export class SurveyStation {
         this.labels = [];
         this.flags = [];
     }
+    public key() {
+        return [this.x,this.y,this.z].toString()
+    }
+}
+
+export class SurveyLeg {
+    public explored;
+    constructor(public date, public survey:string, public flags:string[], public leg:SurveyStation[]) {
+        this.explored=false;
+        if(!flags) {
+            this.flags=[];
+        }
+    }
+    isUnderground():boolean {
+        //ignore splay, above_ground and duplicate
+        return this.flags === undefined || this.flags.length === 0; //.includes('ABOVE_GROUND') && this.leg[1].flags.includes('UNDERGROUND')
+    }
+    otherEnd(station: SurveyStation):SurveyStation {
+        if(this.leg[0] === station) {
+            return this.leg[1];
+        } else {
+            return this.leg[0];
+        }
+    }
 }
 
 export class CaveSurvey {
 
     public surveyStations = {};
     public surveyLegs: SurveyStation[][] = [];
+    public legsBySurveyStation = {}
+    public legsByDate: SurveyLeg[] = [];
+    public legsByStationBySurvey = {} //dictionary keyed first by survey, then by station
     // takes a set of objects representing move, line, label commands from the 3d image format
     constructor(items: Object[]) {
         var currentStationKey;
         var currentStationIndex = 0;
+        var currentDate = null;
+        var currentSurvey = null;
         for(const item of items) {
             //TODO filter out service survey legs
             if(item['codetype'] === 'MOVE') {
@@ -49,9 +78,21 @@ export class CaveSurvey {
                 if(this.surveyStations[stationKey] === undefined) {
                     this.surveyStations[stationKey] = new SurveyStation(currentStationIndex++,item['x'], item['y'], item['z']);
                 }
+                if(item['label']) {
+                    currentSurvey = item['label'];
+                }
                 const startStation = this.surveyStations[currentStationKey];
                 const endStation = this.surveyStations[stationKey];
                 this.surveyLegs.push([startStation, endStation]);
+                var leg = new SurveyLeg(currentDate, currentSurvey, item['flags'], [startStation, endStation]);
+                if(leg.isUnderground() === false) {
+                    continue;
+                }
+                this.storeLegByStation(leg, this.legsBySurveyStation);
+                if(!this.legsByStationBySurvey[leg.survey]) {
+                    this.legsByStationBySurvey[leg.survey]={};
+                }
+                this.storeLegByStation(leg, this.legsByStationBySurvey[leg.survey]);
                 currentStationKey = stationKey;
             }
             if(item['codetype'] === 'LABEL') {
@@ -69,6 +110,152 @@ export class CaveSurvey {
                     this.surveyStations[stationKey].flags = this.surveyStations[stationKey].flags.concat(item['flags']);
                 }
             }
+            if(item['codetype'] === 'DATE') {
+                currentDate = item['date'];
+                //console.log(currentDate);
+            }
+        }
+
+        //Find entrances
+        
+        var entrances = Object.values(this.surveyStations).filter(function(s:SurveyStation) {
+            return s.flags.includes('ENTRANCE') && s.flags.includes('UNDERGROUND');
+        });
+        var legsBySurveyStation = this.legsBySurveyStation;
+        var entranceLegs = entrances.map(function(e:SurveyStation) {
+            var connectedToEntrance = legsBySurveyStation[e.key()];
+            return connectedToEntrance && connectedToEntrance.filter(function(l) {return l.isUnderground()});
+        });
+        //TODO: don't hardcode this
+        //var startEntrance = entrances[8] as SurveyStation;
+
+        //var startEntranceLeg = entranceLegs[8][0];
+        var activeLimitOfExploration = null; //startEntrance;
+        var limitsOfExploration = { };
+        
+        for(let e=0; e<entrances.length; e++) {
+            if(entranceLegs[e]) {
+                limitsOfExploration[(entrances[e] as SurveyStation).key()]=entranceLegs[e];
+            }
+        }
+        //limitsOfExploration[startEntrance.key()]=[startEntranceLeg];
+        var breaklimit = 10000;
+        var i = 0;
+
+        
+
+        //var thisleg = startEntranceLeg;
+        while(i<breaklimit) {
+            i++;
+            if(Object.keys(limitsOfExploration).length === 0) {
+                break;
+            }
+            
+            // Find the next active limit of exploration by looking at the limits and choosing the one
+            // with the earliest date
+            // Get all limit legs as flat array
+            let limitLegs:SurveyLeg[] = [].concat.apply([], Object.values(limitsOfExploration));
+            limitLegs.sort( (a,b) => {
+                if(!b.date) {
+                    return -1;
+                } 
+                if(a.date) { 
+                    return a.date.getTime() - b.date.getTime(); 
+                } 
+                return 1;
+            });
+            let earliestLeg = limitLegs[0];
+            
+            for(let key in limitsOfExploration) {
+                    if(limitsOfExploration[key].includes(earliestLeg)) {
+                        activeLimitOfExploration = this.surveyStations[key];
+                    }
+                }
+            //act as a pop operation. We get it back in the return value of exploreSurvey
+            delete limitsOfExploration[activeLimitOfExploration.key()];
+            let newlimits = this.exploreSurvey(earliestLeg.survey, activeLimitOfExploration);
+            //take the newly discovered limits of exploration, find out the connecting legs, and put them back
+            //on the stack
+            for(let limit of newlimits) {
+                var legsConnectingLimitOfExploration=legsBySurveyStation[limit.key()];
+                if(legsConnectingLimitOfExploration) {
+                    var unexploredLegsConnectingLimitOfExploration=legsConnectingLimitOfExploration.filter(l => l.explored === false);
+                    if(unexploredLegsConnectingLimitOfExploration.length>0) {
+                        limitsOfExploration[limit.key()]=unexploredLegsConnectingLimitOfExploration;
+                    } else {
+                        //delete limitsOfExploration[activeLimitOfExploration.key()];
+                        //activeLimitOfExploration=null;
+                        continue;
+                    }
+                }
+            }
+
+           /* if(unexploredLegsConnectingLimitOfExploration.length === 1) {
+                //proceed to end of leg
+                let thisleg=unexploredLegsConnectingLimitOfExploration[0];
+                thisleg.explored = true;
+                this.legsByDate.push(thisleg);
+                //replace this limit with the next one
+                delete limitsOfExploration[activeLimitOfExploration.key()];
+                activeLimitOfExploration = thisleg.otherEnd(activeLimitOfExploration);
+                limitsOfExploration[activeLimitOfExploration.key()]= legsBySurveyStation[activeLimitOfExploration.key()].filter(l => l.explored === false);
+                continue;                
+            }
+*/
+            // nextleg is an array, normally of two legs -- the current one and the nextleg
+
+        }
+        console.log("entrances: "+entrances);
+    }
+
+    exploreSurvey(surveyName:string, station: SurveyStation):SurveyStation[] {
+        const byStation = this.legsByStationBySurvey[surveyName];
+        let limits = [station]; // a stack of exploration limits. 
+        let exportedLimits = [station]; //always put the start station back in case there are other surveys from this station
+        while(limits.length>0) {
+            let thislimit = limits.pop();
+            let legs=byStation[thislimit.key()];
+            if(legs.length === 0) {
+                continue;
+            }
+            let thisleg:SurveyLeg = legs.pop();
+
+            if(legs.length > 0) {
+                // if there are any other legs connected to the limit of exploration, put this limit back on the 
+                // stack so we can come back to it
+                limits.push(thislimit);
+            }
+            console.log('exploring '+thisleg.survey);
+            this.legsByDate.push(thisleg);
+            thisleg.explored = true; // we may not need this if removal works
+            //remove it from the map so we don't see it again. It has already been taken out of consideration for this station
+            //but needs to be removed from the other end too
+            let otherEnd:SurveyStation = thisleg.otherEnd(thislimit);
+            let withThisLeg = byStation[otherEnd.key()]
+            let withoutThisLeg = withThisLeg.filter(l => l !== thisleg);
+            
+            byStation[otherEnd.key()]=withoutThisLeg;
+            //extend limits to ends of all the legs connecting the limit of exploration
+            //for(let leg of legs) {
+            
+                limits.push(thisleg.otherEnd(thislimit));
+                if(otherEnd.flags.includes("EXPORT")) {
+                    exportedLimits.push(otherEnd);
+                }
+            //}
+        }
+        return exportedLimits;
+    }
+
+    //store a survey leg into a dictionary, keyed by the station coordinates
+    storeLegByStation(leg:SurveyLeg, dict) {
+        for(let station of leg.leg) {
+            const stationKey = station.key();
+            if(!dict[stationKey]) {
+                dict[stationKey]=[];
+            }
+            dict[stationKey].push(leg);
         }
     }
+
 }

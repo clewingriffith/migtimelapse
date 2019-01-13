@@ -1,5 +1,5 @@
 
-import { AfterViewInit, Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, ViewChild, HostListener } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
@@ -34,11 +34,13 @@ export class WorldComponent implements AfterViewInit {
 
   private scene: THREE.Scene;
   private group: THREE.Object3D;
-
+  private terrainObject: THREE.Object3D;
   private numLegsToDisplay = 0;
 
   public rotationSpeedX: number = 0.005;
   public rotationSpeedY: number = 0.01;
+
+  //private animating = true;
 
   @Input()
   public size: number = 20;
@@ -57,6 +59,15 @@ export class WorldComponent implements AfterViewInit {
   @Input('farClipping')
   public farClippingPane: number = 100000;
 
+  @HostListener('window:keydown', ['$event']) onKey(event: KeyboardEvent) {
+    console.log(event);
+    if(event.code === "Space") {
+      this.controls.autoRotate = !this.controls.autoRotate; //this.animating = !this.animating;
+    }
+    if(event.code === "KeyD") {
+      this.terrainObject.visible = !this.terrainObject.visible;
+    }
+  }
 
   constructor(private caveloader: CaveLoaderService, private demloader: DEMLoaderService) {
 
@@ -70,8 +81,8 @@ export class WorldComponent implements AfterViewInit {
    * Animate the cave survey, drawing progressively more survey legs
    */
   private animateSurvey() {
-    this.numLegsToDisplay+=10;
-    this.numLegsToDisplay = Math.min(this.numLegsToDisplay, this.survey.surveyLegs.length);
+    this.numLegsToDisplay+=1;
+    this.numLegsToDisplay = Math.min(this.numLegsToDisplay, this.survey.legsByDate.length);
     var geo = this.legs.geometry as THREE.BufferGeometry;
     geo.setDrawRange(0,this.numLegsToDisplay);
     this.controls.update();
@@ -141,13 +152,16 @@ uvs.push( ix / gridX );
       var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
       this.demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture,  wireframe: false } );
       var mesh = new THREE.Mesh( geometry, this.demMeshMaterial );
+      this.terrainObject = new THREE.Object3D;
+      this.terrainObject.add(mesh);
+      this.group.add(this.terrainObject);
       var demPointCloud = new THREE.Points(geometry, demMaterial);
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
       
       //this.scene.add(demPointCloud);
   //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
-      this.group.add(mesh);
+      //this.group.add(mesh);
 
 
 
@@ -181,10 +195,9 @@ uvs.push( ix / gridX );
         
 
         var legIndices = [];
-        this.survey.surveyLegs.forEach( leg => {
-          if(leg[0].flags.includes('UNDERGROUND') || leg[1].flags.includes('UNDERGROUND')) { 
-            legIndices.push(leg[0].i); legIndices.push(leg[1].i);
-
+        this.survey.legsByDate.forEach( leg => {
+          if(leg.isUnderground()) { 
+            legIndices.push(leg.leg[0].i); legIndices.push(leg.leg[1].i);
           } 
         });
 
@@ -239,6 +252,9 @@ uvs.push( ix / gridX );
    * Create the scene
    */
   private createScene() {
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+    this.renderer.setPixelRatio(devicePixelRatio);
+    this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
     /* Scene */
     THREE.Object3D.DefaultUp=new THREE.Vector3(0,0,1);
     this.scene = new THREE.Scene();
@@ -255,7 +271,7 @@ uvs.push( ix / gridX );
       this.nearClippingPane,
       this.farClippingPane
     );
-    this.controls = new OrbitControls( this.camera );
+    this.controls = new OrbitControls( this.camera, this.renderer.domElement );
     this.controls.autoRotate=true;
     this.controls.enablePan=false;
     this.controls.enableZoom=true;
@@ -270,6 +286,7 @@ uvs.push( ix / gridX );
       var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
       this.group.add( skylight );
       var sunLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
+      sunLight.position.set(0,1,1);
       this.group.add(sunLight);
   }
 
@@ -283,9 +300,7 @@ uvs.push( ix / gridX );
   private startRenderingLoop() {
     /* Renderer */
     // Use canvas element in template
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
-    this.renderer.setPixelRatio(devicePixelRatio);
-    this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+  
 
     let component: WorldComponent = this;
     (function render() {
@@ -321,15 +336,15 @@ uvs.push( ix / gridX );
    */
   public ngAfterViewInit() {
     this.createScene();
-    this.createMountainPointcloud("403_121", 10);
+    //this.createMountainPointcloud("403_121", 10);
     this.createMountainPointcloud("403_122", 10);
     this.createMountainPointcloud("403_123", 10);
     this.createMountainPointcloud("403_124", 10);
-    this.createMountainPointcloud("404_121", 10);
+    //this.createMountainPointcloud("404_121", 10);
     this.createMountainPointcloud("404_122", 10);   //1
     this.createMountainPointcloud("404_123", 10);   //1
     this.createMountainPointcloud("404_124", 10);   //1
-    this.createMountainPointcloud("405_121", 10);
+    //this.createMountainPointcloud("405_121", 10);
     this.createMountainPointcloud("405_122", 10);
     this.createMountainPointcloud("405_123", 10);   //1
     this.createMountainPointcloud("405_124", 10);   //1
