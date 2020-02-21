@@ -1,0 +1,40 @@
+p {
+    color: white;
+}
+pre {
+    color: white;
+    font-size: 10px;
+}
+
+section {
+    opacity: 1;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+}
+
+h1{
+    opacity: 0;
+     font-family: 'Playfair Display';
+ font-size: 48px;   
+ font-weight: 200;
+ color: white;
+ transition: opacity 2s linear
+}
+h2{
+    opacity: 0;
+     font-family: 'Playfair Display';
+ font-size: 24px;   
+ font-weight: 200;
+ color: white;
+ transition: opacity 2s linear
+}
+h3{
+    opacity: 1;
+     font-family: 'Playfair Display';
+ font-size: 24px;   
+ font-weight: 200;
+ color: white;
+ transition: opacity 2s linear
+
+}

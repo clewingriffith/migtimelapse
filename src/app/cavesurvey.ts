@@ -225,7 +225,7 @@ export class CaveSurvey {
                 // stack so we can come back to it
                 limits.push(thislimit);
             }
-            console.log('exploring '+thisleg.survey);
+            //console.log('exploring '+thisleg.survey);
             this.legsByDate.push(thisleg);
             thisleg.explored = true; // we may not need this if removal works
             //remove it from the map so we don't see it again. It has already been taken out of consideration for this station

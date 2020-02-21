@@ -1,11 +1,16 @@
 
-import { AfterViewInit, Component, ElementRef, Input, ViewChild, HostListener } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, Output, ViewChild /*, HostListener*/ } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
 import { DEMLoaderService } from '../demloader.service';
 import { CaveSurvey } from '../cavesurvey';
 import { SurveyStation } from '../cavesurvey';
+import { GlobalViewParameters } from '../GlobalViewParameters';
+
+
+export type TerrainMode = 'wireframe' | 'texture' | 'none';
+
 
 @Component({
   selector: 'app-world',
@@ -21,6 +26,8 @@ export class WorldComponent implements AfterViewInit {
     return this.canvasRef.nativeElement;
   }
   
+  public viewParameters: GlobalViewParameters = new GlobalViewParameters();
+
   @ViewChild('canvas')
   private canvasRef: ElementRef<HTMLCanvasElement>;
 
@@ -32,10 +39,13 @@ export class WorldComponent implements AfterViewInit {
 
   private demMeshMaterial: THREE.MeshLambertMaterial;
 
+  private demMeshMaterials: THREE.MeshLambertMaterial[] = [];
+
+  private _terrainMode: TerrainMode;
   private scene: THREE.Scene;
   private group: THREE.Object3D;
   private terrainObject: THREE.Object3D;
-  private numLegsToDisplay = 0;
+  private _numLegsToDisplay = 0;
 
   public rotationSpeedX: number = 0.005;
   public rotationSpeedY: number = 0.01;
@@ -45,6 +55,39 @@ export class WorldComponent implements AfterViewInit {
   @Input()
   public size: number = 20;
 
+
+  @Input()
+  set terrainMode(mode:TerrainMode) {
+    this._terrainMode = mode; 
+    if(mode === 'wireframe') {
+      this.demMeshMaterial.wireframe = true;
+    } else {
+      this.demMeshMaterial.wireframe = false;
+    }
+  }
+
+  @Input('numSurveyLegsToDisplay')
+  set numLegsToDisplay(n: number) {
+    //console.log(n);
+    if(n>0) {
+      this._numLegsToDisplay = Math.ceil(n);
+    }
+  }
+
+  get numLegsToDisplay() {
+    return this._numLegsToDisplay;
+  }
+
+  @Output('maxDisplayDate')
+  get maxDisplayDate() {
+    if(this.survey && this.survey.legsByDate && this._numLegsToDisplay>0) {
+      let legAtN = this.survey.legsByDate[this._numLegsToDisplay];
+      return legAtN.date;
+    } else {
+      return 0;
+    }
+    
+  }
 
   /* STAGE PROPERTIES */
   @Input()
@@ -58,7 +101,7 @@ export class WorldComponent implements AfterViewInit {
 
   @Input('farClipping')
   public farClippingPane: number = 100000;
-
+/*
   @HostListener('window:keydown', ['$event']) onKey(event: KeyboardEvent) {
     console.log(event);
     if(event.code === "Space") {
@@ -67,25 +110,67 @@ export class WorldComponent implements AfterViewInit {
     if(event.code === "KeyD") {
       this.terrainObject.visible = !this.terrainObject.visible;
     }
-  }
+  }*/
 
   constructor(private caveloader: CaveLoaderService, private demloader: DEMLoaderService) {
 
    }
 
 
+  public updateFromViewParams() {
+
+
+    //clamp
+    if(this.viewParameters.azimuthAngle < 0) {
+      this.viewParameters.azimuthAngle += 2*Math.PI;
+    }
+    if(this.viewParameters.azimuthAngle > 2*Math.PI) {
+      this.viewParameters.azimuthAngle -= 2*Math.PI;
+    }
+    if(this.viewParameters.altitudeAngle < 0.01) {
+      this.viewParameters.altitudeAngle = 0.01;
+    }
+    if(this.viewParameters.altitudeAngle > Math.PI/2) {
+      this.viewParameters.altitudeAngle = Math.PI/2;
+    }
+
+    //This lot came from when we used orbit controls.
+    ////////////
+     let currentAzimuth = this.controls.getAzimuthalAngle();
+     let currentAltitude = this.controls.getPolarAngle();
+     //console.log('current azimuth' + this.azimuth);
+     this.controls.rotateLeft(currentAzimuth - this.viewParameters.azimuthAngle);
+     this.controls.rotateUp(currentAltitude - this.viewParameters.altitudeAngle);
+     //this.controls.rotateLeft(this.azimuth);
+    
+     //this.controls.update();
+    /////////////
+
+    //controlling the camera directly
+    this.camera.position.copy(this.viewParameters.getCameraCartesianPosition());
+    this.camera.lookAt(this.viewParameters.targetPosition);
+    //it appears that this.demMeshMaterial is only one of the terrain segments: it probably 
+    //shouldn't be a class variable.
+    this.demMeshMaterials.forEach(m => m.opacity = this.viewParameters.terrainOpacity);
+    this.demMeshMaterials.forEach(m => m.wireframe = this.viewParameters.terrainWireframe);
+    //this.demMeshMaterial.opacity = this.viewParameters.terrainOpacity;
+  }
+
+   public renderFrame() {
+     this.renderer.render(this.scene, this.camera);
+   }
 
   /* STAGING, ANIMATION, AND RENDERING */
 
   /**
    * Animate the cave survey, drawing progressively more survey legs
    */
-  private animateSurvey() {
-    this.numLegsToDisplay+=1;
+  public animateSurvey() {
+    /*this.numLegsToDisplay+=1;
     this.numLegsToDisplay = Math.min(this.numLegsToDisplay, this.survey.legsByDate.length);
     var geo = this.legs.geometry as THREE.BufferGeometry;
     geo.setDrawRange(0,this.numLegsToDisplay);
-    this.controls.update();
+    this.controls.update();*/
     //console.log(this.controls.getAzimuthalAngle())
   }
 
@@ -150,11 +235,19 @@ uvs.push( ix / gridX );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
       var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
-      this.demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture,  wireframe: false } );
+      this.demMeshMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
+      
+      this.demMeshMaterials.push(this.demMeshMaterial);
+
+
       var mesh = new THREE.Mesh( geometry, this.demMeshMaterial );
       this.terrainObject = new THREE.Object3D;
       this.terrainObject.add(mesh);
+
+
+      //Keep out of the scene until we want to display
       this.group.add(this.terrainObject);
+      
       var demPointCloud = new THREE.Points(geometry, demMaterial);
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
@@ -224,8 +317,12 @@ uvs.push( ix / gridX );
         // geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         
         this.legs = new THREE.LineSegments( nonindexed, material );
-        // Add cube to scene
+               
+        //Keep out of group until we want to display
         this.group.add(this.legs);
+        
+        
+        
         //var box = new THREE.BoxHelper(this.legs, new THREE.Color('red'));
         //this.group.add(box);
       
@@ -234,6 +331,9 @@ uvs.push( ix / gridX );
         this.camera.up.set(0,0,1);
         this.camera.lookAt(c.x,c.y,c.z);
         this.controls.target = new THREE.Vector3(c.x,c.y,c.z);
+
+        this.viewParameters.targetPosition = new THREE.Vector3(c.x,c.y,c.z);
+
         //this.controls.maxAzimuthAngle = Math.PI / 4;
         //this.controls.minAzimuthAngle = 0;
        /* this.controls.maxAzimuthAngle=Math.PI;
@@ -241,7 +341,19 @@ uvs.push( ix / gridX );
         this.controls.maxPolarAngle=Math.PI;
         this.controls.minPolarAngle=0;*/
         this.controls.update();
-        this.startRenderingLoop();
+
+
+        //We can't use our own rendering loop because anime.js has it's own one which 
+        //also uses requestAnimationFrame.
+        // It can be done manually in the inspect console by selecting the world element
+        //and using
+        //let component = ng.probe($0)._debugContext.component;
+        //press space
+        //loop this:  
+        //   component.animateSurvey()
+        //   component.renderer.render(component.scene, component.camera);
+
+        //this.startRenderingLoop();
     });
   
 
@@ -272,7 +384,7 @@ uvs.push( ix / gridX );
       this.farClippingPane
     );
     this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-    this.controls.autoRotate=true;
+    this.controls.autoRotate=false;
     this.controls.enablePan=false;
     this.controls.enableZoom=true;
     this.controls.autoRotateSpeed=4.0;
@@ -297,8 +409,8 @@ uvs.push( ix / gridX );
   /**
    * Start the rendering loop
    */
-  private startRenderingLoop() {
-    /* Renderer */
+  /*private startRenderingLoop() {
+
     // Use canvas element in template
   
 
@@ -310,7 +422,7 @@ uvs.push( ix / gridX );
       component.renderer.render(component.scene, component.camera);
     }());
   }
-
+*/
 
 
   /* EVENTS */
@@ -336,7 +448,7 @@ uvs.push( ix / gridX );
    */
   public ngAfterViewInit() {
     this.createScene();
-    //this.createMountainPointcloud("403_121", 10);
+   /* //this.createMountainPointcloud("403_121", 10);
     this.createMountainPointcloud("403_122", 10);
     this.createMountainPointcloud("403_123", 10);
     this.createMountainPointcloud("403_124", 10);
@@ -350,8 +462,14 @@ uvs.push( ix / gridX );
     this.createMountainPointcloud("405_124", 10);   //1
     //this.createMountainPointcloud("406_122", 1);
     //this.createMountainPointcloud("406_123", 1);
-    //this.createMountainPointcloud("406_124", 1);
+    //this.createMountainPointcloud("406_124", 1);*/
+
+    this.createMountainPointcloud("404_123", 10);
+    this.createMountainPointcloud("405_123", 10);
+    //this.createMountainPointcloud("404_124", 10); //broken
     this.createGeometry();
         //this.startRenderingLoop();
   }
+
+
 }
