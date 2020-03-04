@@ -24,7 +24,7 @@ This script takes a single argument, the name of the raw .asc file for a particu
 tile. It assumes the existence of the neighbouring tiles, so we need to have one more row
 and column to the north/east than we are planning to output.
 """
-tilefilename = sys.argv[1];  #eg. ".\assets\GK1_403_124.asc"
+tilefilename = sys.argv[1];  #eg. ".\rawdata\GK1_403_124.asc"
 tilex = int(tilefilename[-11:-8]) #eg. 403
 tiley = int(tilefilename[-7:-4]) #eg. 124
 #We also need to read the tiles to the north and east to get the last row or column of points
@@ -35,7 +35,26 @@ northeasttilefilename = "%s%d_%d.asc" % (tilefilename[0:-11], tilex+1, tiley+1)
 print(sys.argv[1])
 
 
+
 def readTile(filename):
+    if("TM" in filename):
+        return readTileTM(filename)
+    else:
+        return readTileGK(filename)
+
+def readTileTM(filename):
+    bigArray={}
+    inputFile = open(filename,'r')
+    for ix in range(0,1000):
+        for iy in range(0,1000):
+            line = inputFile.readline()
+            bigArray[(ix,iy)]=line
+    inputFile.close()
+    return bigArray
+
+
+"""The gauss kreuger version is more complicated because of the notes above."""
+def readTileGK(filename):
     print("reading ",filename)
     inputFile = open(filename,'r')
     numlines = 0
@@ -75,6 +94,15 @@ def readTile(filename):
 
     iymax = numlines//1000
     #print (iymax)
+
+
+    #keep track of the min and max integer coordinates for debugging
+    ixmin = 9999999
+    iymin = 9999999
+    ixmax = 0
+    iymax = 0
+
+
     bigArray={}
 
     while True:
@@ -86,9 +114,32 @@ def readTile(filename):
         fy=float(y)
         ix=round(fx-xmin)
         iy=round(fy-ymin)
+        #keep track of the min and max integer coordinates for debugging
+        ixmin = min(ixmin, ix)
+        iymin = min(iymin, iy)
+        ixmax = max(ixmax, ix)
+        iymax = max(iymax, iy)
+
         bigArray[(ix,iy)]=line
 
     print("read ", numlines, "lines")
+    print("imin %d,%d" % (ixmin, iymin))
+    print("imax %d,%d" % (ixmax, iymax))
+
+    #output pbm file of keys which exist for visualization debugging
+    # pbmfile = open(filename+".pbm", "w")
+    # pbmfile.write("P1\n")
+    # pbmfile.write("%d %d\n" % (ixmax-ixmin, iymax-iymin))
+    # for iy in range(iymin,iymax):
+    #     for ix in range(ixmin, ixmax):
+    #         if (ix,iy) in bigArray:
+    #             pbmfile.write("1")
+    #         else:
+    #             pbmfile.write("0")
+    #     pbmfile.write("\n")
+    # pbmfile.close()
+
+
     return bigArray
 
 
@@ -101,7 +152,12 @@ northArray = readTile(northtilefilename)
 northeastArray = readTile(northeasttilefilename)
 
 #extend point array with data from neibouring tiles to make a 1001x1001 grid
-bigArray[(1000,1000)]=northeastArray[(0,0)]
+
+#this is a hack in case the data isn't there
+try:
+    bigArray[(1000,1000)]=northeastArray[(0,0)]
+except KeyError:
+    bigArray[(1000,1000)]=bigArray[(999,999)]
 for iy in range(0,1000):
     bigArray[(1000,iy)]=eastArray[(0,iy)]
 for ix in range(0,1000):

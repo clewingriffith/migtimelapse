@@ -47,11 +47,19 @@ width1kmTile=3776
 fixedX=403
 fixedY=123
 
+
+#The offset from GK to TM 
+tm_x_offset = 1397
+tm_y_offset = 1805
+
 for ix in range(0,3):
     for iy in range(0,3):
-        command = "convert .\montage.jpg -crop %dx%d+%d+%d -resize 2048x2048 %d_%d.jpg" % (width1kmTile,width1kmTile,fixedImageX+ix*width1kmTile,fixedImageY+iy*width1kmTile,fixedX+ix,fixedY+1-iy)
+        command = "convert .\montage.jpg -crop %dx%d+%d+%d -resize 2048x2048 %d_%d.jpg" % (width1kmTile,width1kmTile,fixedImageX+tm_x_offset+ix*width1kmTile,fixedImageY+tm_y_offset+iy*width1kmTile,fixedX+ix,fixedY+1-iy)
         print(command)
         subprocess.run(command, shell=True)
+
+
+
 
 
 #http://gistiles3.arso.gov.si/nukleus_tiles/Gis/NukleusTiles/v50/AgccTile.ashx?gcid=lay_AO_DOF_2014&r=1&c=1&lod=3&lid=lay_ao_dof_2014&f=jpg

@@ -79,7 +79,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
       altitudeAngle: 0,
       azimuthAngle: 0,
       cameraDistance: [10000,1500],
-      duration: 5000,
+      duration: 500, //5000
       easing: "easeOutCubic",
       update: function() {
         world.updateFromViewParams()
@@ -88,9 +88,9 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     })
     .add({
       targets: this.viewParams,
-      terrainOpacity: [1,0.8],
+      //terrainOpacity: [1,0.8],
       altitudeAngle: [0,Math.PI/2-0.6],
-      duration: 5000,
+      duration: 500,
       easing: "easeOutCubic",
       update: function() {
         world.updateFromViewParams()
@@ -99,10 +99,21 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     })
     .add({
       targets: this.viewParams,
-      terrainOpacity: [0.8,0.6],
+      terrainOpacity: [0.8,1.0],
       azimuthAngle: 2*Math.PI,
-      duration: 5000,
+      duration: 500,
       easing: "easeInOutCubic",
+      update: function() {
+        world.updateFromViewParams()
+        world.renderFrame();
+      }
+    })
+    .add({
+      targets: this.viewParams,
+      zmax: [ 1900, 1500 ] ,
+      azimuthAngle: 0,
+      duration: 20000,
+      easing: 'linear',
       update: function() {
         world.updateFromViewParams()
         world.renderFrame();
@@ -190,7 +201,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
   
   @HostListener('window:keydown', ['$event']) onKey(event: KeyboardEvent) {
     console.log(event);
-    switch(event.key) {
+    switch(event.code) {
       case 'ArrowLeft': 
         this.viewParams.azimuthAngle += 0.1; break;
       case 'ArrowRight':
@@ -199,6 +210,19 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
         this.viewParams.altitudeAngle -= 0.1; break;
       case 'ArrowDown':
         this.viewParams.altitudeAngle += 0.1; break;   
+      case 'PageUp':
+        this.viewParams.cameraDistance -= 10; break;
+      case 'PageDown':
+        this.viewParams.cameraDistance += 10; break;   
+      case 'KeyW':
+        this.viewParams.terrainWireframe = !this.viewParams.terrainWireframe; break;   
+      case 'Digit1':
+        this.viewParams.terrainResolution = 100; break;
+      case 'Digit2':
+        this.viewParams.terrainResolution = 10; break;
+      case 'Digit3':
+        this.viewParams.terrainResolution = 1; break;
+      
     }
     this.world.updateFromViewParams()
     this.world.renderFrame();

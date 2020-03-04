@@ -10,7 +10,8 @@ import { map } from 'rxjs/operators';
 })
 export class DEMLoaderService {
 
-
+  //prefix: string = "assets/dem/GK1_";
+  prefix: string = "assets/dem/96TM/TM1_";
 
   constructor( private http: HttpClient) {
 
@@ -21,7 +22,7 @@ export class DEMLoaderService {
     //This parses a .asc.bin as preprocessed by a python script in this project
     //processAscDem.py
     //input data to that script is a .asc file from http://gis.arso.gov.si/evode/profile.aspx?id=atlas_voda_Lidar@Arso&culture=en-US
-    return this.http.get('assets/dem/GK1_' + tile + '.asc.' + resolution + 'm.bin', {responseType: 'arraybuffer'});
+    return this.http.get(this.prefix + tile + '.asc.' + resolution + 'm.bin', {responseType: 'arraybuffer'});
     
   }
 
