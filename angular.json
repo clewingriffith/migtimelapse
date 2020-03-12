@@ -20,7 +20,7 @@
             "tsConfig": "src/tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets/mig.3d"
             ],
             "styles": [
               "src/styles.css"
@@ -52,7 +52,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "survex3dformat:build"
+            "browserTarget": "survex3dformat:build",
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {

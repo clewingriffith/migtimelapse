@@ -88,7 +88,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     })
     .add({
       targets: this.viewParams,
-      //terrainOpacity: [1,0.8],
+      terrainOpacity: 1,
       altitudeAngle: [0,Math.PI/2-0.6],
       duration: 500,
       easing: "easeOutCubic",
@@ -99,7 +99,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     })
     .add({
       targets: this.viewParams,
-      terrainOpacity: [0.8,1.0],
+      terrainOpacity: [1.0,1.0],
       azimuthAngle: 2*Math.PI,
       duration: 500,
       easing: "easeInOutCubic",
@@ -108,7 +108,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
         world.renderFrame();
       }
     })
-    .add({
+    /*.add({
       targets: this.viewParams,
       zmax: [ 1900, 1500 ] ,
       azimuthAngle: 0,
@@ -118,7 +118,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
         world.updateFromViewParams()
         world.renderFrame();
       }
-    })
+    })*/
     /*.add({
       targets: this.viewParams,
       azimuthAngle: [0,2*Math.PI],

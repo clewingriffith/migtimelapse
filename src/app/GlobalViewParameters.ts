@@ -30,6 +30,12 @@ export class GlobalViewParameters {
         y: [121000, 127000],
         
     };
+
+    public readonly terrainTileExtent = {
+        x: [394, 413],
+        y: [116, 129],
+    };
+
     //region which is clipped off, not the whole extent of the mountain
     ymin = 123000;
     ymax = 124500;

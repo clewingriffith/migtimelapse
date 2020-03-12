@@ -11,3 +11,8 @@ Build Instructions
 6. npm install --save three-orbitcontrols-ts
 7. Run ng serve to start the app at http://localhost:4200.
 
+DEM and Satellite Data
+======================
+pip install Pillow
+
+

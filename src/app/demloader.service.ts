@@ -17,14 +17,21 @@ export class DEMLoaderService {
 
   }
 
-
+/*
   public readDEMData(tile: string, resolution: number): Observable<ArrayBuffer> {
     //This parses a .asc.bin as preprocessed by a python script in this project
     //processAscDem.py
     //input data to that script is a .asc file from http://gis.arso.gov.si/evode/profile.aspx?id=atlas_voda_Lidar@Arso&culture=en-US
-    return this.http.get(this.prefix + tile + '.asc.' + resolution + 'm.bin', {responseType: 'arraybuffer'});
+    return this.http.get(this.prefix + tile + '.' + resolution + 'm.bin', {responseType: 'arraybuffer'});
     
   }
-
+*/
+  public readDEMHeightData(tile: string, resolution: number): Observable<ArrayBuffer> {
+    //This parses a .height.bin as preprocessed by a python script in this project
+    //processAscDem.py
+    //input data to that script is a .asc file from http://gis.arso.gov.si/evode/profile.aspx?id=atlas_voda_Lidar@Arso&culture=en-US
+    return this.http.get(this.prefix + tile + '.' + resolution + 'm.height.bin', {responseType: 'arraybuffer'});
+    
+  }
 
 }

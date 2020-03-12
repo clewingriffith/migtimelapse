@@ -7,7 +7,7 @@ import { DEMLoaderService } from '../demloader.service';
 import { CaveSurvey } from '../cavesurvey';
 import { SurveyStation } from '../cavesurvey';
 import { GlobalViewParameters } from '../GlobalViewParameters';
-import { DoubleSide } from 'three';
+import { DoubleSide, Vector3, Texture } from 'three';
 
 
 export type TerrainMode = 'wireframe' | 'texture' | 'none';
@@ -40,7 +40,7 @@ export class WorldComponent implements AfterViewInit {
 
   //private demMeshMaterial: THREE.MeshLambertMaterial;
 
-  private demMeshMaterials: THREE.MeshLambertMaterial[] = [];
+  private demMeshMaterials: THREE.MeshStandardMaterial[] = [];
   private terrainObjectByResolution = { 1: [], 10:[], 100:[] };
   private terrainGeometriesByResolution = { 1: [], 10:[], 100:[] };
 
@@ -180,18 +180,56 @@ export class WorldComponent implements AfterViewInit {
     //console.log(this.controls.getAzimuthalAngle())
   }
 
-
-  // pass a tile name like 404_123
-  // This reads the dem data for the tile and creates geometry for it.
-  // it also loads appropriate texture information
-  // resolution should be 1 for 1m resolution, 10 for 10m resolution, 100 for 100m resolution
-  private createMountainPointcloud(tile: string, resolution: number) {
-    this.demloader.readDEMData(tile, resolution).subscribe( arraybuffer => {
+  //use displacement map
+  private createTerrainTile(tile: string, resolution: number) {
+    this.demloader.readDEMHeightData(tile, resolution).subscribe( arraybuffer => {
       const geometry = new THREE.BufferGeometry();
       //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
-      const demPointArray = new Float32Array(arraybuffer);
+      //const demPointArray = new Float32Array(arraybuffer);
 
-      var texture = new THREE.TextureLoader().load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
+      const demHeightPO2ArrayBuffer = [];
+      for(let i=0; i<512; i++) {
+        for(let j=0; j<512; j++) {
+          demHeightPO2ArrayBuffer.push(1700.0);
+        }
+      }
+      const demHeightFloatArrayPO2 = new Float32Array(demHeightPO2ArrayBuffer); //.length/3);
+
+      const demHeightFloatArray = new Float32Array(arraybuffer); //.length/3);
+      const demHeightArrayBuffer = [];
+      for(let i=0; i<demHeightFloatArray.length; i++) {
+        demHeightArrayBuffer.push(demHeightFloatArray[i]);
+      }
+      const demPointArrayBuffer = [];
+      let demHeightArray = new Uint16Array(demHeightArrayBuffer);
+
+      //set height to zero
+      /*for(let offset=0; offset<demPointArray.length/3; offset++) {
+       // demHeightArray[offset] = demPointArray[3*offset+2];
+        demPointArray[3*offset+2] = 0.0;
+      } */
+
+      
+     // used the buffer to create a DataTexture
+      
+      //displacementMap.needsUpdate = true;
+
+      let textureLoader = new THREE.TextureLoader();
+
+      let texture = textureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
+      texture.generateMipmaps = true;
+      //texture.minFilter = THREE.LinearFilter;
+      //let texture = textureLoader.load( 'assets/satellite/96TM/256/uv_grid_opengl.jpg' );
+      //let displacementMap:Texture = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.'+resolution+'m.height.png' );
+      //displacementMap.format = THREE.LuminanceFormat;
+      //displacementMap.type = THREE.FloatType;
+      //let displacementMap = new THREE.DataTexture( demHeightFloatArrayPO2, 512, 521, THREE.LuminanceFormat, THREE.FloatType, THREE.UVMapping );
+      //displacementMap.needsUpdate = true;
+      let bumpMap = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.normal.png' );
+      bumpMap.minFilter = THREE.LinearFilter;
+      let tilex:number = 1000*Number(tile.split("_")[0]);
+      let tiley:number = 1000*Number(tile.split("_")[1]);
+
       const grid_width = 1+(1000/resolution);
       //build out indices for mesh version
       var indices = [];
@@ -212,99 +250,62 @@ export class WorldComponent implements AfterViewInit {
           var d = ( ix + 1 ) + gridX1  * iy;
 
           // faces
-          indices.push( a, b, d );
-          indices.push( b, c, d );
-
+          //indices.push( a, b, d );
+          //indices.push( b, c, d );
+          indices.push( d,b,a );
+          indices.push( d,c,b );
         }
       }
+
       
-      /*var segment_width = 1000 / gridX;
+       /* for ( ix=0; ix<gridX; ix++ ) {
+          for ( iy=0; iy<gridY; iy++ ) {
+            demPointArrayBuffer.push(tilex+ix*resolution);
+            demPointArrayBuffer.push(tiley+iy*resolution);
+            demPointArrayBuffer.push(0.0);
+          }
+        }*/
+      var segment_width = 1000 / gridX;
     	var segment_height = 1000 / gridY;
-      var width_half = 500;
-	    var height_half = 500;*/
+      //var width_half = 500;
+	    //var height_half = 500;
       for ( iy = 0; iy < gridY1; iy ++ ) {
-		    //var y = iy * segment_height - height_half;
+		    var y = iy * segment_height;
   		  for ( ix = 0; ix < gridX1; ix ++ ) {
-	    		//var x = ix * segment_width - width_half;
-			    uvs.push(  ( iy / gridY ) );
+          var x = ix * segment_width;
+          demPointArrayBuffer.push(tilex+x,tiley+y,demHeightFloatArray[ix*gridY1+iy])
           uvs.push( ix / gridX );
+          uvs.push(  ( iy / gridY ) );
+          
   		  }
 
 	    }
 
       //indices.push(0,1,100);
       
+ 
+      
+
       geometry.setIndex(indices);
-      geometry.addAttribute( 'position', new THREE.BufferAttribute( demPointArray, 3 ) );
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(demPointArrayBuffer), 3 ) );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
       //this.terrainGeometriesByResolution[resolution].push(geometry);
       //var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
       
-      let terrainMaterial = new THREE.MeshLambertMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
+      let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
+      terrainMaterial.metalness = 0.0;
+      terrainMaterial.roughness = 1.0;
+      //terrainMaterial.displacementMap = displacementMap;
+      //terrainMaterial.displacementScale = 2000.0;
+      terrainMaterial.normalMap = bumpMap;
+      //terrainMaterial.needsUpdate = true;
+      
+      terrainMaterial.normalMapType = THREE.ObjectSpaceNormalMap;
       terrainMaterial.clippingPlanes = this.clippingPlanes;
       terrainMaterial.clipIntersection = true;
       terrainMaterial.side = THREE.DoubleSide;
-      //terrainMaterial.stencilFunc = THREE.AlwaysStencilFunc;
-      //terrainMaterial.stencilWrite = true;
-      //terrainMaterial.depthTest = false;
-      //terrainMaterial.stencilFail = THREE.DecrementWrapStencilOp;
-      //terrainMaterial.stencilZFail = THREE.DecrementWrapStencilOp;
-      //terrainMaterial.stencilZPass = THREE.DecrementWrapStencilOp;
-      //terrainMaterial.side = THREE.FrontSide;
-
-     /* for(let i=0; i<6; i++) {
-        //We need to write the mesh twice, once in a material which sets the stencil buffer appropriate to the clipping
-        //and once normally.
-        let stencilGroup = new THREE.Group();
-        let terrainStencilBaseMaterial = new THREE.MeshBasicMaterial();
-        terrainStencilBaseMaterial.depthWrite = false;
-        terrainStencilBaseMaterial.depthTest = false;
-        terrainStencilBaseMaterial.colorWrite = false;
-        terrainStencilBaseMaterial.stencilWrite = true;
-        terrainStencilBaseMaterial.stencilFunc = THREE.AlwaysStencilFunc
-        terrainStencilBaseMaterial.clippingPlanes = [this.clippingPlanes[i]];
-
-        let terrainStencilFrontMaterial = terrainStencilBaseMaterial.clone();
-        terrainStencilFrontMaterial.side = THREE.FrontSide;
-        terrainStencilFrontMaterial.stencilFail = THREE.DecrementWrapStencilOp;
-        terrainStencilFrontMaterial.stencilZFail = THREE.DecrementWrapStencilOp;
-        terrainStencilFrontMaterial.stencilZPass = THREE.DecrementWrapStencilOp;
-        let terrainStencilFrontMesh = new THREE.Mesh( geometry, terrainStencilFrontMaterial );
-        terrainStencilFrontMesh.renderOrder = i;
-        stencilGroup.add(terrainStencilFrontMesh);
-
-        let terrainStencilBackMaterial = terrainStencilBaseMaterial.clone();
-        terrainStencilBackMaterial.side = THREE.BackSide;
-        terrainStencilBackMaterial.stencilFail = THREE.IncrementWrapStencilOp;
-        terrainStencilBackMaterial.stencilZFail = THREE.IncrementWrapStencilOp;
-        terrainStencilBackMaterial.stencilZPass = THREE.IncrementWrapStencilOp;
-       
-        let terrainStencilBackMesh = new THREE.Mesh( geometry, terrainStencilBackMaterial );
-        terrainStencilBackMesh.renderOrder = i;
-        stencilGroup.add(terrainStencilBackMesh);
-
-        let planeMat = new THREE.MeshStandardMaterial( {
-          color: 0xE91E63,
-          metalness: 0.1,
-          roughness: 0.75,
-          stencilWrite: true,
-					stencilRef: 0,
-          stencilFunc: THREE.NotEqualStencilFunc,
-          stencilFail: THREE.ReplaceStencilOp,
-          stencilZFail: THREE.ReplaceStencilOp,
-          stencilZPass: THREE.ReplaceStencilOp,
-        } );
-        let po = new THREE.Mesh( this.clippingPlaneGeometries[i], planeMat );
-        po.onAfterRender = function ( renderer ) {
-          renderer.clearStencil();
-        };
-        po.renderOrder = i + 1.1;
-
-        this.group.add(stencilGroup);
-        this.group.add(po);
-      }
-*/
+     
       this.demMeshMaterials.push(terrainMaterial);
 
       let terrainObject = new THREE.Group;
@@ -350,7 +351,119 @@ export class WorldComponent implements AfterViewInit {
 
     });
   }
-  
+
+ /* // pass a tile name like 404_123
+  // This reads the dem data for the tile and creates geometry for it.
+  // it also loads appropriate texture information
+  // resolution should be 1 for 1m resolution, 10 for 10m resolution, 100 for 100m resolution
+  private createMountainPointcloud(tile: string, resolution: number) {
+    this.demloader.readDEMData(tile, resolution).subscribe( arraybuffer => {
+      const geometry = new THREE.BufferGeometry();
+      //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
+      const demPointArray = new Float32Array(arraybuffer);
+
+      let textureLoader = new THREE.TextureLoader();
+
+      //let texture = textureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
+      let displacement = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.'+resolution+'m.png' );
+
+      const grid_width = 1+(1000/resolution);
+      //build out indices for mesh version
+      var indices = [];
+      var uvs = [];
+      var normals = [];
+      var ix; 
+      var iy;
+      const gridX = grid_width - 1;
+	    const gridY = grid_width - 1;
+
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
+      for ( iy=0; iy<gridY; iy++ ) {
+        for ( ix=0; ix<gridX; ix++ ) {
+          var a = ix + gridX1  * iy;
+          var b = ix + gridX1  * ( iy + 1 );
+          var c = ( ix + 1 ) + gridX1  * ( iy + 1 );
+          var d = ( ix + 1 ) + gridX1  * iy;
+
+          // faces
+          indices.push( a, b, d );
+          indices.push( b, c, d );
+
+        }
+      }
+      
+   
+      for ( iy = 0; iy < gridY1; iy ++ ) {
+		    //var y = iy * segment_height - height_half;
+  		  for ( ix = 0; ix < gridX1; ix ++ ) {
+	    		//var x = ix * segment_width - width_half;
+			    uvs.push(  ( iy / gridY ) );
+          uvs.push( ix / gridX );
+  		  }
+
+	    }
+
+      //indices.push(0,1,100);
+      
+      geometry.setIndex(indices);
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( demPointArray, 3 ) );
+      geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+      geometry.computeVertexNormals();
+      //this.terrainGeometriesByResolution[resolution].push(geometry);
+      //var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
+      
+      let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
+      terrainMaterial.clippingPlanes = this.clippingPlanes;
+      terrainMaterial.clipIntersection = true;
+      terrainMaterial.side = THREE.DoubleSide;
+     
+      this.demMeshMaterials.push(terrainMaterial);
+
+      let terrainObject = new THREE.Group;
+      
+      let terrainMesh = new THREE.Mesh( geometry, terrainMaterial );
+      //terrainMesh.renderOrder = 10;
+
+      terrainObject.add(terrainMesh);
+      //terrainObject.add(terrainStencilFrontMesh);
+      //terrainObject.add(terrainStencilBackMesh);
+      
+      //This is to move the 96TM tiles to match the GK ones which is how the cave position is defined.
+      //We could alternatively move the fixed point for the cave, but for the moment, we move the entire mountain.
+      //terrainObject.translateX(370.0);
+      //terrainObject.translateY(-478);
+
+
+
+
+ //     terrainObject.position.x = 370.0;
+ //     terrainObject.position.y = -478.0;
+
+      
+
+      // store the terrain meshes against their resolution so that we can selectively display
+      // based on what resolution we want to see
+      this.terrainObjectByResolution[resolution].push(terrainObject);
+
+      //Keep out of the scene until we want to display
+      this.group.add(terrainObject);
+      
+      //var demPointCloud = new THREE.Points(geometry, demMaterial);
+      //geometry.computeBoundingBox();
+      //geometry.computeBoundingSphere();
+      
+      //this.scene.add(demPointCloud);
+  //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
+      //this.group.add(mesh);
+
+
+
+
+
+    });
+  }
+  */
   private createGeometry() {
 
     this.caveloader.read3dFile().subscribe( fileItems => {
@@ -463,7 +576,7 @@ export class WorldComponent implements AfterViewInit {
 
     
     this.scene.background = new THREE.Color('#92bbff');
-    this.scene.fog = new THREE.FogExp2('#92bbff', 0.00025);
+    //this.scene.fog = new THREE.FogExp2('#92bbff', 0.00025);
 
     this.group = new THREE.Object3D();
     //this.group.rotation.x = -Math.PI / 2;
@@ -471,26 +584,6 @@ export class WorldComponent implements AfterViewInit {
     this.scene.add(this.group);
 
 
-    //Add ground
-   /* let groundGeom = new THREE.PlaneBufferGeometry(1000,2000,1,1);
-    groundGeom.translate(405000,123000,0);
-    let groundMaterial = new THREE.MeshStandardMaterial();
-    //groundMaterial.depthWrite = false;
-    groundMaterial.depthTest = false;
-    groundMaterial.colorWrite = false;
-    groundMaterial.stencilWrite = true;
-    groundMaterial.stencilRef = 1
-    groundMaterial.stencilFunc = THREE.AlwaysStencilFunc;
-    groundMaterial.stencilZFail = THREE.ReplaceStencilOp,
-    groundMaterial.stencilZPass = THREE.ReplaceStencilOp;
-    groundMaterial.stencilFail = THREE.ReplaceStencilOp;
-    groundMaterial.side = THREE.FrontSide;
-    //groundMaterial.color = new THREE.Color('brown');
-    let groundMesh = new THREE.Mesh(groundGeom, groundMaterial);
-    //groundMesh.renderOrder = 1;
-    this.group.add(groundMesh);*/
-    //this.clippingPlanes.push(new THREE.Plane(new THREE.Vector3( 1, 0, 0 ), -404000.0));
-    //this.clippingPlanes.push(new THREE.Plane(new THREE.Vector3( 0, 0, -1 ), 1500.0));
 
 
     this.setClippedExtent();
@@ -708,7 +801,8 @@ export class WorldComponent implements AfterViewInit {
     });
 
     let zMinMesh = new THREE.Mesh(zMinGeom, groundMat);
-    this.group.add(zMinMesh);
+    //this.group.add(zMinMesh);
+    
     //zMinMesh.onAfterRender  = () => {this.renderer.clearStencil();}
     
     // let zMaxGeom = new THREE.Geometry();
@@ -789,13 +883,25 @@ export class WorldComponent implements AfterViewInit {
     //this.createMountainPointcloud("406_123", 1);
     //this.createMountainPointcloud("406_124", 1);*/
 
-    for(let i=401; i<407; i++) {
-      for(let j=121; j<127; j++) {
-        this.createMountainPointcloud(i+"_"+j, 100);
-        this.createMountainPointcloud(i+"_"+j, 10);
+    let extent = this.viewParameters.terrainTileExtent;
+    /*for(let i=extent.x[0]; i<=extent.x[1]; i++) {
+      for(let j=extent.y[0]; j<=extent.y[1]; j++) {
+        this.createTerrainTile(i+"_"+j, 100);
+        //this.createMountainPointcloud(i+"_"+j, 10);
        // this.createMountainPointcloud(i+"_"+j, 1);  //this one is a bit crazy.
       }
-    }
+    }*/
+
+    this.createTerrainTile("405_123", 100);
+    this.createTerrainTile("405_123", 10);
+    this.createTerrainTile("405_124", 100);
+    this.createTerrainTile("405_124", 10);
+    this.createTerrainTile("404_123", 100);
+    this.createTerrainTile("404_123", 10);
+    this.createTerrainTile("404_124", 100);
+    this.createTerrainTile("404_124", 10);
+    //this.createTerrainTile("404_123", 1);
+    //this.createMountainPointcloud("404_123", 10);
 
 /*
     this.createMountainPointcloud("404_122", 10);
