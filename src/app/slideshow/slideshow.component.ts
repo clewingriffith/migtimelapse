@@ -13,7 +13,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
 
   private timeline: any;
 
-  @ViewChild(WorldComponent)
+  @ViewChild(WorldComponent, { static: true })
   private world: WorldComponent;
 
   private viewParams:GlobalViewParameters;

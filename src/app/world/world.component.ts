@@ -29,7 +29,7 @@ export class WorldComponent implements AfterViewInit {
   
   public viewParameters: GlobalViewParameters = new GlobalViewParameters();
 
-  @ViewChild('canvas')
+  @ViewChild('canvas', { static: true })
   private canvasRef: ElementRef<HTMLCanvasElement>;
 
   private legs: THREE.LineSegments;
@@ -42,6 +42,7 @@ export class WorldComponent implements AfterViewInit {
 
   private demMeshMaterials: THREE.MeshStandardMaterial[] = [];
   private terrainObjectByResolution = { 1: [], 10:[], 100:[] };
+  private terrainObjectTiles = {}; //LOD objects keyed by tile eg. 404_123
   private terrainGeometriesByResolution = { 1: [], 10:[], 100:[] };
 
   private clippingPlanes: THREE.Plane[] = [];
@@ -153,11 +154,22 @@ export class WorldComponent implements AfterViewInit {
 
     //show the appropriate mesh for the resolution
     //remove the existing meshes
-    for(let res in this.terrainObjectByResolution) {
-      this.terrainObjectByResolution[res].forEach(t => this.group.remove(t));
+    for(let tile in this.terrainObjectTiles) {
+      this.group.remove(this.terrainObjectTiles[tile]); //.forEach(t => this.group.remove(t));
     }
-    //and then add the one for this resolution
-    this.terrainObjectByResolution[this.viewParameters.terrainResolution].forEach(t => this.group.add(t));
+    for(let tile in this.terrainObjectTiles) {
+      let lod = this.terrainObjectTiles[tile];
+      this.group.add(lod);
+      lod.update(this.camera);
+      //this.terrainObjectTiles[tile].forEach(t => this.group.add(t));
+    }
+
+   
+    // for(let res in this.terrainObjectByResolution) {
+    //   this.terrainObjectByResolution[res].forEach(t => this.group.remove(t));
+    // }
+    // //and then add the one for this resolution
+    // this.terrainObjectByResolution[this.viewParameters.terrainResolution].forEach(t => this.group.add(t));
     
 
   }
@@ -225,8 +237,8 @@ export class WorldComponent implements AfterViewInit {
       //displacementMap.type = THREE.FloatType;
       //let displacementMap = new THREE.DataTexture( demHeightFloatArrayPO2, 512, 521, THREE.LuminanceFormat, THREE.FloatType, THREE.UVMapping );
       //displacementMap.needsUpdate = true;
-      let bumpMap = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.normal.png' );
-      bumpMap.minFilter = THREE.LinearFilter;
+      //let normalMap = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.normal.png' );
+      //normalMap.minFilter = THREE.LinearFilter;
       let tilex:number = 1000*Number(tile.split("_")[0]);
       let tiley:number = 1000*Number(tile.split("_")[1]);
 
@@ -290,18 +302,22 @@ export class WorldComponent implements AfterViewInit {
       geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(demPointArrayBuffer), 3 ) );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
+      let tileCenter = new THREE.Vector3();
+      geometry.computeBoundingBox();
+      geometry.boundingBox.getCenter(tileCenter);
+      geometry.center();
+      //.translate(tileCenter.x, tileCenter.y, tileCenter.z);
       //this.terrainGeometriesByResolution[resolution].push(geometry);
       //var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
       
       let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
       terrainMaterial.metalness = 0.0;
       terrainMaterial.roughness = 1.0;
-      //terrainMaterial.displacementMap = displacementMap;
-      //terrainMaterial.displacementScale = 2000.0;
-      terrainMaterial.normalMap = bumpMap;
-      //terrainMaterial.needsUpdate = true;
+
+      //terrainMaterial.normalMap = normalMap;
       
-      terrainMaterial.normalMapType = THREE.ObjectSpaceNormalMap;
+      
+      //terrainMaterial.normalMapType = THREE.ObjectSpaceNormalMap;
       terrainMaterial.clippingPlanes = this.clippingPlanes;
       terrainMaterial.clipIntersection = true;
       terrainMaterial.side = THREE.DoubleSide;
@@ -311,159 +327,42 @@ export class WorldComponent implements AfterViewInit {
       let terrainObject = new THREE.Group;
       
       let terrainMesh = new THREE.Mesh( geometry, terrainMaterial );
-      //terrainMesh.renderOrder = 10;
+      
 
       terrainObject.add(terrainMesh);
-      //terrainObject.add(terrainStencilFrontMesh);
-      //terrainObject.add(terrainStencilBackMesh);
-      
-      //This is to move the 96TM tiles to match the GK ones which is how the cave position is defined.
-      //We could alternatively move the fixed point for the cave, but for the moment, we move the entire mountain.
-      //terrainObject.translateX(370.0);
-      //terrainObject.translateY(-478);
-
-
-
-
- //     terrainObject.position.x = 370.0;
- //     terrainObject.position.y = -478.0;
-
       
 
       // store the terrain meshes against their resolution so that we can selectively display
       // based on what resolution we want to see
       this.terrainObjectByResolution[resolution].push(terrainObject);
-
-      //Keep out of the scene until we want to display
-      this.group.add(terrainObject);
-      
-      //var demPointCloud = new THREE.Points(geometry, demMaterial);
-      //geometry.computeBoundingBox();
-      //geometry.computeBoundingSphere();
-      
-      //this.scene.add(demPointCloud);
-  //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
-      //this.group.add(mesh);
-
-
-
-
-
-    });
-  }
-
- /* // pass a tile name like 404_123
-  // This reads the dem data for the tile and creates geometry for it.
-  // it also loads appropriate texture information
-  // resolution should be 1 for 1m resolution, 10 for 10m resolution, 100 for 100m resolution
-  private createMountainPointcloud(tile: string, resolution: number) {
-    this.demloader.readDEMData(tile, resolution).subscribe( arraybuffer => {
-      const geometry = new THREE.BufferGeometry();
-      //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
-      const demPointArray = new Float32Array(arraybuffer);
-
-      let textureLoader = new THREE.TextureLoader();
-
-      //let texture = textureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
-      let displacement = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.'+resolution+'m.png' );
-
-      const grid_width = 1+(1000/resolution);
-      //build out indices for mesh version
-      var indices = [];
-      var uvs = [];
-      var normals = [];
-      var ix; 
-      var iy;
-      const gridX = grid_width - 1;
-	    const gridY = grid_width - 1;
-
-	    const gridX1 = gridX + 1;
-	    const gridY1 = gridY + 1;
-      for ( iy=0; iy<gridY; iy++ ) {
-        for ( ix=0; ix<gridX; ix++ ) {
-          var a = ix + gridX1  * iy;
-          var b = ix + gridX1  * ( iy + 1 );
-          var c = ( ix + 1 ) + gridX1  * ( iy + 1 );
-          var d = ( ix + 1 ) + gridX1  * iy;
-
-          // faces
-          indices.push( a, b, d );
-          indices.push( b, c, d );
-
-        }
+      if(this.terrainObjectTiles[tile] === undefined) {
+        let lod = new THREE.LOD();
+        lod.position.set(tileCenter.x,tileCenter.y,tileCenter.z);
+        this.terrainObjectTiles[tile] = lod; 
+       
+        //geometry.boundingBox.getCenter(this.terrainObjectTiles[tile].position);
       }
-      
-   
-      for ( iy = 0; iy < gridY1; iy ++ ) {
-		    //var y = iy * segment_height - height_half;
-  		  for ( ix = 0; ix < gridX1; ix ++ ) {
-	    		//var x = ix * segment_width - width_half;
-			    uvs.push(  ( iy / gridY ) );
-          uvs.push( ix / gridX );
-  		  }
 
-	    }
-
-      //indices.push(0,1,100);
-      
-      geometry.setIndex(indices);
-      geometry.addAttribute( 'position', new THREE.BufferAttribute( demPointArray, 3 ) );
-      geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
-      geometry.computeVertexNormals();
-      //this.terrainGeometriesByResolution[resolution].push(geometry);
-      //var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
-      
-      let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
-      terrainMaterial.clippingPlanes = this.clippingPlanes;
-      terrainMaterial.clipIntersection = true;
-      terrainMaterial.side = THREE.DoubleSide;
-     
-      this.demMeshMaterials.push(terrainMaterial);
-
-      let terrainObject = new THREE.Group;
-      
-      let terrainMesh = new THREE.Mesh( geometry, terrainMaterial );
-      //terrainMesh.renderOrder = 10;
-
-      terrainObject.add(terrainMesh);
-      //terrainObject.add(terrainStencilFrontMesh);
-      //terrainObject.add(terrainStencilBackMesh);
-      
-      //This is to move the 96TM tiles to match the GK ones which is how the cave position is defined.
-      //We could alternatively move the fixed point for the cave, but for the moment, we move the entire mountain.
-      //terrainObject.translateX(370.0);
-      //terrainObject.translateY(-478);
-
-
-
-
- //     terrainObject.position.x = 370.0;
- //     terrainObject.position.y = -478.0;
-
-      
-
-      // store the terrain meshes against their resolution so that we can selectively display
-      // based on what resolution we want to see
-      this.terrainObjectByResolution[resolution].push(terrainObject);
-
+      let terrainLOD:THREE.LOD = this.terrainObjectTiles[tile];
+      const distanceByRes = {
+        "1": 0,
+        "10": 3000,
+        "100": 8000
+      } 
+      //if(resolution == 1) {
+     // terrainLOD.addLevel(terrainObject, 0.0); //scale so 10m res is displayed at 2km or closer
+     // } else {
+        terrainLOD.addLevel(terrainObject, distanceByRes[resolution]); //scale so 10m res is displayed at 2km or closer
+      //}
+      //geometry.boundingBox.getCenter(terrainLOD.position);
       //Keep out of the scene until we want to display
-      this.group.add(terrainObject);
-      
-      //var demPointCloud = new THREE.Points(geometry, demMaterial);
-      //geometry.computeBoundingBox();
-      //geometry.computeBoundingSphere();
-      
-      //this.scene.add(demPointCloud);
-  //    //this.demPointCloud = new THREE.Points( geometry, demMaterial );
-      //this.group.add(mesh);
-
-
-
+      //this.group.add(terrainObject);
 
 
     });
   }
-  */
+
+ 
   private createGeometry() {
 
     this.caveloader.read3dFile().subscribe( fileItems => {
@@ -576,7 +475,7 @@ export class WorldComponent implements AfterViewInit {
 
     
     this.scene.background = new THREE.Color('#92bbff');
-    //this.scene.fog = new THREE.FogExp2('#92bbff', 0.00025);
+    this.scene.fog = new THREE.FogExp2('#92bbff', 0.00015);
 
     this.group = new THREE.Object3D();
     //this.group.rotation.x = -Math.PI / 2;
@@ -653,11 +552,7 @@ export class WorldComponent implements AfterViewInit {
     this.controls.enablePan=false;
     this.controls.enableZoom=true;
     this.controls.autoRotateSpeed=4.0;
-    //this.camera.position.z = this.cameraZ;
 
-      /*var axisHelper = new THREE.AxesHelper(2000);
-      axisHelper.position.set(404000,123000,0);
-      this.group.add(axisHelper);*/
 
 
       var skylight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.2 );
@@ -666,47 +561,7 @@ export class WorldComponent implements AfterViewInit {
       sunLight.position.set(0,1,1);
       this.group.add(sunLight);
   }
-/*
-  private createPlaneStencilGroup(geometry, plane) {
-    
-      var group = new THREE.Group();
-      var baseMat = new THREE.MeshBasicMaterial();
-      baseMat.depthWrite = false;
-      baseMat.depthTest = false;
-      baseMat.colorWrite = false;
-      baseMat.stencilWrite = true;
-      baseMat.stencilFunc = THREE.AlwaysStencilFunc;
 
-      // back faces
-      var mat0 = baseMat.clone();
-      mat0.side = THREE.BackSide;
-      mat0.clippingPlanes = [ plane ];
-      mat0.stencilFail = THREE.IncrementWrapStencilOp;
-      mat0.stencilZFail = THREE.IncrementWrapStencilOp;
-      mat0.stencilZPass = THREE.IncrementWrapStencilOp;
-
-      var mesh0 = new THREE.Mesh( geometry, mat0 );
-      //mesh0.renderOrder = renderOrder;
-      group.add( mesh0 );
-
-      // front faces
-      var mat1 = baseMat.clone();
-      mat1.side = THREE.FrontSide;
-      mat1.clippingPlanes = [ plane ];
-      mat1.stencilFail = THREE.DecrementWrapStencilOp;
-      mat1.stencilZFail = THREE.DecrementWrapStencilOp;
-      mat1.stencilZPass = THREE.DecrementWrapStencilOp;
-
-      var mesh1 = new THREE.Mesh( geometry, mat1 );
-      //mesh1.renderOrder = renderOrder;
-
-      group.add( mesh1 );
-
-      return group;
-
-    
-  }
-*/
   private setClippedExtent() {
 
     let vertices:THREE.Vector3[] = [
@@ -801,47 +656,14 @@ export class WorldComponent implements AfterViewInit {
     });
 
     let zMinMesh = new THREE.Mesh(zMinGeom, groundMat);
-    //this.group.add(zMinMesh);
-    
-    //zMinMesh.onAfterRender  = () => {this.renderer.clearStencil();}
-    
-    // let zMaxGeom = new THREE.Geometry();
-    // zMaxGeom.vertices = vertices;
-    // zMaxGeom.faces.push( new THREE.Face3(1,5,6));
-    // zMaxGeom.faces.push( new THREE.Face3(1,6,2));
-    // this.clippingPlaneGeometries.push(zMaxGeom);
-    // let zMaxMesh = new THREE.Mesh(zMaxGeom, clipMat);
-    //this.group.add(zMaxMesh);
-    //zMaxMesh.onAfterRender  = () => {this.renderer.clearStencil();}
-    
-
-    
 
   }
-
 
 
   private getAspectRatio() {
     return this.canvas.clientWidth / this.canvas.clientHeight;
   }
 
-  /**
-   * Start the rendering loop
-   */
-  /*private startRenderingLoop() {
-
-    // Use canvas element in template
-  
-
-    let component: WorldComponent = this;
-    (function render() {
-      requestAnimationFrame(render);
-      
-      component.animateSurvey();
-      component.renderer.render(component.scene, component.camera);
-    }());
-  }
-*/
 
 
   /* EVENTS */
@@ -883,25 +705,18 @@ export class WorldComponent implements AfterViewInit {
     //this.createMountainPointcloud("406_123", 1);
     //this.createMountainPointcloud("406_124", 1);*/
 
-    let extent = this.viewParameters.terrainTileExtent;
-    /*for(let i=extent.x[0]; i<=extent.x[1]; i++) {
-      for(let j=extent.y[0]; j<=extent.y[1]; j++) {
-        this.createTerrainTile(i+"_"+j, 100);
-        //this.createMountainPointcloud(i+"_"+j, 10);
-       // this.createMountainPointcloud(i+"_"+j, 1);  //this one is a bit crazy.
+    
+    for (let res of [100, 10, 1]) {
+      let extent = this.viewParameters.terrainTileExtent[res];
+      for (let i = extent.x[0]; i <= extent.x[1]; i++) {
+        for (let j = extent.y[0]; j <= extent.y[1]; j++) {
+          this.createTerrainTile(i + "_" + j, res);
+        }
       }
-    }*/
+    }
+ 
 
-    this.createTerrainTile("405_123", 100);
-    this.createTerrainTile("405_123", 10);
-    this.createTerrainTile("405_124", 100);
-    this.createTerrainTile("405_124", 10);
-    this.createTerrainTile("404_123", 100);
-    this.createTerrainTile("404_123", 10);
-    this.createTerrainTile("404_124", 100);
-    this.createTerrainTile("404_124", 10);
-    //this.createTerrainTile("404_123", 1);
-    //this.createMountainPointcloud("404_123", 10);
+   
 
 /*
     this.createMountainPointcloud("404_122", 10);

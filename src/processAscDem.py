@@ -58,70 +58,73 @@ def processSingleAsciiTile(tilefilename): #eg. ".\rawdata\dem\96TM\TM1_403_124.a
         bigArray[(ix,1000)]=northArray[(ix,0)]
 
     #define output arrays
-    a1mArray = array.array('f')
-    a10mArray = array.array('f')
-    a100mArray = array.array('f')
+    #a1mArray = array.array('f')
+    #a10mArray = array.array('f')
+    #a100mArray = array.array('f')
 
     #Just the height components
     z1mArray = array.array('f')  ### IGNORE COMMENT # represent height as a 32bit int which will end up as a 16bit int in PNG
     z10mArray = array.array('f') ### IGNORE COMMENT  # represent height as a 32bit int which will end up as a 16bit int in PNG
     z100mArray = array.array('f')
-    z1mArray16bit = array.array('H')
-    z10mArray16bit = array.array('H')
-    z100mArray16bit = array.array('H')
+    #z1mArray16bit = array.array('H')
+    #z10mArray16bit = array.array('H')
+    #z100mArray16bit = array.array('H')
 
     #1m sampling
     for ix in range(0,1001):
         for iy in range(0,1001):
-            x,y,z = [float(k) for k in bigArray[(ix,iy)].split(';')]
-            a1mArray.extend([x,y,z])
+            #x,y,z = [float(k) for k in bigArray[(ix,iy)].split(';')]
+            z = float(bigArray[(ix,iy)].split(';')[2])
+            #a1mArray.extend([x,y,z])
             #z1mArray.append(int(30*z)) #scale z to a range of roughly 0-60,000  (assuming float range 0.0->2000.0m )
             z1mArray.append(z);
-            z1mArray16bit.append(int(65535*(z/2000)))
+            #z1mArray16bit.append(int(65535*(z/2000)))
 
     
     #10m sampling
     for ix in range(0,101):
         for iy in range(0,101):
-            x,y,z = [float(k) for k in bigArray[(10*ix,10*iy)].split(';')]
-            a10mArray.extend([x,y,z])
+            #x,y,z = [float(k) for k in bigArray[(10*ix,10*iy)].split(';')]
+            z = float(bigArray[(10*ix,10*iy)].split(';')[2])
+            #a10mArray.extend([x,y,z])
             z10mArray.append(z)
-            z10mArray16bit.append(int(65535*(z/2000)))
+            #z10mArray16bit.append(int(65535*(z/2000)))
     
     #100m sampling
     for ix in range(0,11):
         for iy in range(0,11):
-            x,y,z = [float(k) for k in bigArray[(100*ix,100*iy)].split(';')]
-            a100mArray.extend([x,y,z])
+            #x,y,z = [float(k) for k in bigArray[(100*ix,100*iy)].split(';')]
+            z = float(bigArray[(100*ix,100*iy)].split(';')[2])
+            #a100mArray.extend([x,y,z])
             z100mArray.append(z)
-            z100mArray16bit.append(int(65535*(z/2000)))
+            #z100mArray16bit.append(int(65535*(z/2000)))
 
 
     srcTileFilename = tilefilename
     dstTileFileprefix = srcTileFilename.replace("rawdata", "assets").replace(".asc", "")
-    a1mOutputFile = open(dstTileFileprefix+".1m.bin",'wb')
-    a1mOutputFile.write(a1mArray.tobytes())
-    a1mOutputFile.close()
-    a10mOutputFile = open(dstTileFileprefix+".10m.bin",'wb')
-    a10mOutputFile.write(a10mArray.tobytes())
-    a10mOutputFile.close()
-    a100mOutputFile = open(dstTileFileprefix+".100m.bin",'wb')
-    a100mOutputFile.write(a100mArray.tobytes())
-    a100mOutputFile.close()
+    # a1mOutputFile = open(dstTileFileprefix+".1m.bin",'wb')
+    # a1mOutputFile.write(a1mArray.tobytes())
+    # a1mOutputFile.close()
+    # a10mOutputFile = open(dstTileFileprefix+".10m.bin",'wb')
+    # a10mOutputFile.write(a10mArray.tobytes())
+    # a10mOutputFile.close()
+    # a100mOutputFile = open(dstTileFileprefix+".100m.bin",'wb')
+    # a100mOutputFile.write(a100mArray.tobytes())
+    # a100mOutputFile.close()
 
     # height map
     heightMapFile1m = open(dstTileFileprefix+".1m.height.bin", "wb")
     heightMapFile1m.write(z1mArray.tobytes())
     heightMapFile1m.close()
-    Image.frombytes('I;16', (1001,1001), z1mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".1m.height.png")
+    #Image.frombytes('I;16', (1001,1001), z1mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".1m.height.png")
     heightMapFile10m = open(dstTileFileprefix+".10m.height.bin", "wb")
     heightMapFile10m.write(z10mArray.tobytes())
     heightMapFile10m.close()
-    Image.frombytes('I;16', (101,101), z10mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".10m.height.png")
+    #Image.frombytes('I;16', (101,101), z10mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".10m.height.png")
     heightMapFile100m = open(dstTileFileprefix+".100m.height.bin", "wb")
     heightMapFile100m.write(z100mArray.tobytes())
     heightMapFile100m.close()
-    Image.frombytes('I;16', (11,11), z100mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".100m.height.png")
+    #Image.frombytes('I;16', (11,11), z100mArray16bit.tobytes()).transpose(Image.FLIP_TOP_BOTTOM).save(dstTileFileprefix+".100m.height.png")
 
 
     #Generate normal map
@@ -271,7 +274,7 @@ if __name__ == '__main__':
     for srcTileFilename in glob.glob('rawdata/dem/96TM/*.asc'):
         tilex = int(srcTileFilename[-11:-8]) #eg. 403
         tiley = int(srcTileFilename[-7:-4]) #eg. 124
-        dstTileFilenameHighRes = srcTileFilename.replace("rawdata", "assets").replace(".asc", "")+".1m.bin"
+        dstTileFilenameHighRes = srcTileFilename.replace("rawdata", "assets").replace(".asc", "")+".1m.height.bin"
 
         #skip processing if the result file is already there. This allows us to add new raw tiles and 
         #reprocess without doing the whole lot again
