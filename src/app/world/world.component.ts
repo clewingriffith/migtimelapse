@@ -41,9 +41,13 @@ export class WorldComponent implements AfterViewInit {
   //private demMeshMaterial: THREE.MeshLambertMaterial;
 
   private demMeshMaterials: THREE.MeshStandardMaterial[] = [];
+ 
   private terrainObjectByResolution = { 1: [], 10:[], 100:[] };
   private terrainObjectTiles = {}; //LOD objects keyed by tile eg. 404_123
+  private terrainMaterialByTile = {}; //key is the tile number like 404_123
   private terrainGeometriesByResolution = { 1: [], 10:[], 100:[] };
+
+  private terrainTextureLoader = new THREE.TextureLoader();
 
   private clippingPlanes: THREE.Plane[] = [];
   private zmaxPlane: THREE.Plane;
@@ -99,10 +103,10 @@ export class WorldComponent implements AfterViewInit {
   public fieldOfView: number = 70;
 
   @Input('nearClipping')
-  public nearClippingPane: number = 1;
+  public nearClippingPane: number = 10;
 
   @Input('farClipping')
-  public farClippingPane: number = 100000;
+  public farClippingPane: number = 20000;
 
   constructor(private caveloader: CaveLoaderService, private demloader: DEMLoaderService) {
 
@@ -152,6 +156,7 @@ export class WorldComponent implements AfterViewInit {
     this.demMeshMaterials.forEach(m => m.wireframe = this.viewParameters.terrainWireframe);
     this.demMeshMaterials.forEach(m => m.clippingPlanes = this.clippingPlanes);
 
+
     //show the appropriate mesh for the resolution
     //remove the existing meshes
     for(let tile in this.terrainObjectTiles) {
@@ -164,6 +169,8 @@ export class WorldComponent implements AfterViewInit {
       //this.terrainObjectTiles[tile].forEach(t => this.group.add(t));
     }
 
+    this.legs.visible = this.viewParameters.showCave;
+    this.legs.position.set(this.viewParameters.caveOffset.x, this.viewParameters.caveOffset.y, this.viewParameters.caveOffset.z);
    
     // for(let res in this.terrainObjectByResolution) {
     //   this.terrainObjectByResolution[res].forEach(t => this.group.remove(t));
@@ -178,67 +185,39 @@ export class WorldComponent implements AfterViewInit {
      this.renderer.render(this.scene, this.camera);
    }
 
-  /* STAGING, ANIMATION, AND RENDERING */
 
-  /**
-   * Animate the cave survey, drawing progressively more survey legs
-   */
-  public animateSurvey() {
-    /*this.numLegsToDisplay+=1;
-    this.numLegsToDisplay = Math.min(this.numLegsToDisplay, this.survey.legsByDate.length);
-    var geo = this.legs.geometry as THREE.BufferGeometry;
-    geo.setDrawRange(0,this.numLegsToDisplay);
-    this.controls.update();*/
-    //console.log(this.controls.getAzimuthalAngle())
+  private loadTexture(tile: string) {
+     this.terrainTextureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg', (texture) => {
+        let mat:THREE.MeshStandardMaterial = this.terrainMaterialByTile[tile];
+        mat.map = texture;
+        mat.needsUpdate = true;
+     } ); 
   }
 
+  private loadNormalMap(tile: string) { 
+    this.terrainTextureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.normal.png', (normalmap) => {
+       let mat:THREE.MeshStandardMaterial = this.terrainMaterialByTile[tile];
+       mat.normalMap = normalmap;
+       mat.normalMapType = THREE.ObjectSpaceNormalMap;
+       mat.needsUpdate = true;
+    } ); 
+ }
+
   //use displacement map
-  private createTerrainTile(tile: string, resolution: number) {
+  private createTerrainTileGeometry(tile: string, resolution: number) {
+    //arraybuffer is an array of heights
     this.demloader.readDEMHeightData(tile, resolution).subscribe( arraybuffer => {
       const geometry = new THREE.BufferGeometry();
-      //const geometry = new THREE.PlaneBufferGeometry(1000,1000,99,99);
-      //const demPointArray = new Float32Array(arraybuffer);
 
-      const demHeightPO2ArrayBuffer = [];
-      for(let i=0; i<512; i++) {
-        for(let j=0; j<512; j++) {
-          demHeightPO2ArrayBuffer.push(1700.0);
-        }
-      }
-      const demHeightFloatArrayPO2 = new Float32Array(demHeightPO2ArrayBuffer); //.length/3);
+      const demHeightFloatArray = new Float32Array(arraybuffer); 
 
-      const demHeightFloatArray = new Float32Array(arraybuffer); //.length/3);
-      const demHeightArrayBuffer = [];
-      for(let i=0; i<demHeightFloatArray.length; i++) {
-        demHeightArrayBuffer.push(demHeightFloatArray[i]);
-      }
       const demPointArrayBuffer = [];
-      let demHeightArray = new Uint16Array(demHeightArrayBuffer);
 
-      //set height to zero
-      /*for(let offset=0; offset<demPointArray.length/3; offset++) {
-       // demHeightArray[offset] = demPointArray[3*offset+2];
-        demPointArray[3*offset+2] = 0.0;
-      } */
 
-      
-     // used the buffer to create a DataTexture
-      
-      //displacementMap.needsUpdate = true;
+      //TODO: load textures independently as they may come in later
+      //let texture = textureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
+      //texture.generateMipmaps = true;
 
-      let textureLoader = new THREE.TextureLoader();
-
-      let texture = textureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg' );
-      texture.generateMipmaps = true;
-      //texture.minFilter = THREE.LinearFilter;
-      //let texture = textureLoader.load( 'assets/satellite/96TM/256/uv_grid_opengl.jpg' );
-      //let displacementMap:Texture = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.'+resolution+'m.height.png' );
-      //displacementMap.format = THREE.LuminanceFormat;
-      //displacementMap.type = THREE.FloatType;
-      //let displacementMap = new THREE.DataTexture( demHeightFloatArrayPO2, 512, 521, THREE.LuminanceFormat, THREE.FloatType, THREE.UVMapping );
-      //displacementMap.needsUpdate = true;
-      //let normalMap = textureLoader.load( 'assets/dem/96TM/TM1_' + tile + '.normal.png' );
-      //normalMap.minFilter = THREE.LinearFilter;
       let tilex:number = 1000*Number(tile.split("_")[0]);
       let tiley:number = 1000*Number(tile.split("_")[1]);
 
@@ -262,73 +241,46 @@ export class WorldComponent implements AfterViewInit {
           var d = ( ix + 1 ) + gridX1  * iy;
 
           // faces
-          //indices.push( a, b, d );
-          //indices.push( b, c, d );
           indices.push( d,b,a );
           indices.push( d,c,b );
         }
       }
 
-      
-       /* for ( ix=0; ix<gridX; ix++ ) {
-          for ( iy=0; iy<gridY; iy++ ) {
-            demPointArrayBuffer.push(tilex+ix*resolution);
-            demPointArrayBuffer.push(tiley+iy*resolution);
-            demPointArrayBuffer.push(0.0);
-          }
-        }*/
+    
       var segment_width = 1000 / gridX;
-    	var segment_height = 1000 / gridY;
-      //var width_half = 500;
-	    //var height_half = 500;
+      var segment_height = 1000 / gridY;
+      
       for ( iy = 0; iy < gridY1; iy ++ ) {
 		    var y = iy * segment_height;
   		  for ( ix = 0; ix < gridX1; ix ++ ) {
           var x = ix * segment_width;
           demPointArrayBuffer.push(tilex+x,tiley+y,demHeightFloatArray[ix*gridY1+iy])
           uvs.push( ix / gridX );
-          uvs.push(  ( iy / gridY ) );
-          
+          uvs.push(  ( iy / gridY ) ); 
   		  }
-
 	    }
-
-      //indices.push(0,1,100);
       
- 
-      
-
       geometry.setIndex(indices);
       geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(demPointArrayBuffer), 3 ) );
       geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
-      let tileCenter = new THREE.Vector3();
-      geometry.computeBoundingBox();
-      geometry.boundingBox.getCenter(tileCenter);
-      geometry.center();
-      //.translate(tileCenter.x, tileCenter.y, tileCenter.z);
-      //this.terrainGeometriesByResolution[resolution].push(geometry);
-      //var demMaterial = new THREE.PointsMaterial( { color: 0x888888 } );
-      
-      let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, map: texture, transparent:true, wireframe: false } );
-      terrainMaterial.metalness = 0.0;
-      terrainMaterial.roughness = 1.0;
 
-      //terrainMaterial.normalMap = normalMap;
+      //the following 3 lines shift the center position of the tile to it's middle and 1000m up. 
+      //This is needed if we use THREE.LOD (level of detail) because distances are calculated to the object's position.
+      //Without this, the tile still has a position of 0,0,0, which is over 400km away.
+      let tileCenter = new THREE.Vector3(tilex+500, tiley+500, 1000.0);
+      geometry.computeBoundingBox();
+      geometry.translate(-tileCenter.x, -tileCenter.y, -tileCenter.z);
       
-      
-      //terrainMaterial.normalMapType = THREE.ObjectSpaceNormalMap;
-      terrainMaterial.clippingPlanes = this.clippingPlanes;
-      terrainMaterial.clipIntersection = true;
-      terrainMaterial.side = THREE.DoubleSide;
+      //We mark it as transparent, although the opacity maybe 1. It allows us to very opacity from the view params.
+      let terrainMaterial = this.terrainMaterialByTile[tile];
      
-      this.demMeshMaterials.push(terrainMaterial);
+      //by keeping a list of the mesh materials, we can change them when the view params change.
+      //We need one for each tile because of the textures
+      //this.demMeshMaterials.push(terrainMaterial);
 
       let terrainObject = new THREE.Group;
-      
       let terrainMesh = new THREE.Mesh( geometry, terrainMaterial );
-      
-
       terrainObject.add(terrainMesh);
       
 
@@ -339,8 +291,6 @@ export class WorldComponent implements AfterViewInit {
         let lod = new THREE.LOD();
         lod.position.set(tileCenter.x,tileCenter.y,tileCenter.z);
         this.terrainObjectTiles[tile] = lod; 
-       
-        //geometry.boundingBox.getCenter(this.terrainObjectTiles[tile].position);
       }
 
       let terrainLOD:THREE.LOD = this.terrainObjectTiles[tile];
@@ -349,19 +299,24 @@ export class WorldComponent implements AfterViewInit {
         "10": 3000,
         "100": 8000
       } 
-      //if(resolution == 1) {
-     // terrainLOD.addLevel(terrainObject, 0.0); //scale so 10m res is displayed at 2km or closer
-     // } else {
-        terrainLOD.addLevel(terrainObject, distanceByRes[resolution]); //scale so 10m res is displayed at 2km or closer
-      //}
-      //geometry.boundingBox.getCenter(terrainLOD.position);
-      //Keep out of the scene until we want to display
-      //this.group.add(terrainObject);
+
+      terrainLOD.addLevel(terrainObject, distanceByRes[resolution]); //scale so 10m res is displayed at 2km or closer
 
 
     });
   }
 
+  newTerrainMaterial():THREE.MeshStandardMaterial {
+      //We mark it as transparent, although the opacity maybe 1. It allows us to very opacity from the view params.
+      let terrainMaterial = new THREE.MeshStandardMaterial( { color: 0xcccccc, transparent:true, wireframe: false } );
+      terrainMaterial.metalness = 0.0;
+      terrainMaterial.roughness = 1.0;
+
+      //terrainMaterial.clippingPlanes = this.clippingPlanes;
+      terrainMaterial.clipIntersection = true;
+      terrainMaterial.side = THREE.DoubleSide;
+      return terrainMaterial;
+  }
  
   private createGeometry() {
 
@@ -418,7 +373,7 @@ export class WorldComponent implements AfterViewInit {
         
         this.legs = new THREE.LineSegments( nonindexed, material );
                
-        //Keep out of group until we want to display
+        //Keep out of group until we want to display ## IMPORTANT
         this.group.add(this.legs);
         
         
@@ -434,41 +389,20 @@ export class WorldComponent implements AfterViewInit {
 
         this.viewParameters.targetPosition = new THREE.Vector3(c.x,c.y,c.z);
 
-        //this.controls.maxAzimuthAngle = Math.PI / 4;
-        //this.controls.minAzimuthAngle = 0;
-       /* this.controls.maxAzimuthAngle=Math.PI;
-        this.controls.minAzimuthAngle=Math.PI-1;
-        this.controls.maxPolarAngle=Math.PI;
-        this.controls.minPolarAngle=0;*/
         this.controls.update();
 
-
-        //We can't use our own rendering loop because anime.js has it's own one which 
-        //also uses requestAnimationFrame.
-        // It can be done manually in the inspect console by selecting the world element
-        //and using
-        //let component = ng.probe($0)._debugContext.component;
-        //press space
-        //loop this:  
-        //   component.animateSurvey()
-        //   component.renderer.render(component.scene, component.camera);
-
-        //this.startRenderingLoop();
     });
   
-
-
   }
 
-  /**
-   * Create the scene
-   */
+
   private createScene() {
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setPixelRatio(devicePixelRatio);
     this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
     this.renderer.localClippingEnabled = true;
-    /* Scene */
+    
+
     THREE.Object3D.DefaultUp=new THREE.Vector3(0,0,1);
     this.scene = new THREE.Scene();
 
@@ -482,64 +416,16 @@ export class WorldComponent implements AfterViewInit {
     
     this.scene.add(this.group);
 
-
+    let ground = new THREE.PlaneGeometry(30000,30000, 1, 1);
+    ground.translate(403000,123000,0);
+    let groundMesh = new THREE.Mesh(ground, new THREE.MeshBasicMaterial( { "color": "#405043", "flatShading":true }));
+    this.scene.add(groundMesh);    
 
 
     this.setClippedExtent();
 
-  
 
-
-    //this.clippingPlanes.push(new THREE.Plane(new THREE.Vector3( -1, 0, 0 ), 404000.0));
-
-    //add object for clipping plane
-/*
-    this.clippingPlanes.forEach( clippingPlane => {
-      const planesize = 8000;
-      let clipGeom = new THREE.PlaneBufferGeometry(planesize,planesize,1,1);
-      let x = clippingPlane.normal.x != 0 ? clippingPlane.constant : 403000+planesize/2;
-      let y = clippingPlane.normal.y != 0 ? clippingPlane.constant : 123000+planesize/2;
-      let z = clippingPlane.normal.z != 0 ? clippingPlane.constant : 0;
-      
-      //clipGeom.translate(x,y,z);
-
-      let clipMaterial = new THREE.MeshStandardMaterial( {
-        color: 'red',
-        metalness: 0.1,
-        roughness: 0.75,
-        clippingPlanes: this.clippingPlanes.filter( p => p !== clippingPlane ),
-       // stencilWrite: false,
-        stencilWrite: true,
-        stencilRef: 0,
-        stencilFunc: THREE.EqualStencilFunc,
-        stencilFail: THREE.ReplaceStencilOp,
-        stencilZFail: THREE.ReplaceStencilOp,
-        stencilZPass: THREE.ReplaceStencilOp,
-      } );
-  
-
-      let clipMesh = new THREE.Mesh(clipGeom, clipMaterial);
-      clipMesh.onAfterRender = () => {this.renderer.clearStencil();}
-      clipMesh.renderOrder = 6;
-      this.group.add(clipMesh);
-
-    });
-*/
-
-    
-    
-    
-
-
-      // new THREE.Plane( new THREE.Vector3( 0, - 1, 0 ), 0 ),
-      // new THREE.Plane( new THREE.Vector3( 0, 0, - 1 ), 0 )
-    
-    //let planeObject = new THREE.PlaneBufferGeometry( 1000, 1000 );
-    //let poGroup = new THREE.Group();
-  
-    //let stencilGroup = this.createPlaneStencilGroup( /*main mesh*/group, plane, 1 );
-
-    /* Camera */
+    // Camera 
     let aspectRatio = this.getAspectRatio();
     this.camera = new THREE.PerspectiveCamera(
       this.fieldOfView,
@@ -587,17 +473,7 @@ export class WorldComponent implements AfterViewInit {
     this.clippingPlanes = [this.zmaxPlane, this.xminPlane, this.xmaxPlane, this.yminPlane, this.ymaxPlane];
     //this.clippingPlanes.push();
 
-    let clipMat = new THREE.MeshStandardMaterial({
-      color: 'blue',
-      opacity: 0.1,
-      transparent:true,
-      /*stencilWrite : true,
-      stencilRef: 0,
-      stencilFunc:  THREE.NotEqualStencilFunc,
-      stencilFail: THREE.ReplaceStencilOp,
-      stencilZFail: THREE.ReplaceStencilOp,
-      stencilZPass: THREE.ReplaceStencilOp*/
-    });
+
 /*
   2+----+6
   /    /|
@@ -689,49 +565,40 @@ export class WorldComponent implements AfterViewInit {
    */
   public ngAfterViewInit() {
     this.createScene();
-   /* //this.createMountainPointcloud("403_121", 10);
-    this.createMountainPointcloud("403_122", 10);
-    this.createMountainPointcloud("403_123", 10);
-    this.createMountainPointcloud("403_124", 10);
-    //this.createMountainPointcloud("404_121", 10);
-    this.createMountainPointcloud("404_122", 10);   //1
-    this.createMountainPointcloud("404_123", 10);   //1
-    this.createMountainPointcloud("404_124", 10);   //1
-    //this.createMountainPointcloud("405_121", 10);
-    this.createMountainPointcloud("405_122", 10);
-    this.createMountainPointcloud("405_123", 10);   //1
-    this.createMountainPointcloud("405_124", 10);   //1
-    //this.createMountainPointcloud("406_122", 1);
-    //this.createMountainPointcloud("406_123", 1);
-    //this.createMountainPointcloud("406_124", 1);*/
-
+    /* temporarily remove from view
+    //get a list of the tiles
+    let extent = this.viewParameters.terrainTileExtent[100];
+    let tileKeys = [];
+    for (let i = extent.x[0]; i <= extent.x[1]; i++) {
+      for (let j = extent.y[0]; j <= extent.y[1]; j++) {
+        tileKeys.push(i+"_"+j);
+      }
+    }
+    //tileKeys should contain strings like "403_123".  This is done for the 100m resolution which covers the widest area.
     
-    for (let res of [100, 10, 1]) {
-      let extent = this.viewParameters.terrainTileExtent[res];
+    //Create materials for each tile
+    for(let tile of tileKeys) {
+      this.terrainMaterialByTile[tile] = this.newTerrainMaterial();
+      //not sure this is necessary
+      this.demMeshMaterials.push(this.terrainMaterialByTile[tile]);
+    }
+
+
+    for (let resolution of [100,10,1]) {
+      let extent = this.viewParameters.terrainTileExtent[resolution];
       for (let i = extent.x[0]; i <= extent.x[1]; i++) {
         for (let j = extent.y[0]; j <= extent.y[1]; j++) {
-          this.createTerrainTile(i + "_" + j, res);
+          this.createTerrainTileGeometry(i + "_" + j, resolution);
         }
       }
     }
  
 
-   
+    for(let tile of tileKeys) {
+      this.loadTexture(tile);
+      this.loadNormalMap(tile);
+    }*/
 
-/*
-    this.createMountainPointcloud("404_122", 10);
-    this.createMountainPointcloud("405_122", 10);
-    this.createMountainPointcloud("404_123", 10);
-    this.createMountainPointcloud("405_123", 10);
-    this.createMountainPointcloud("404_124", 10);
-    this.createMountainPointcloud("405_124", 10); */
-/*
-    this.createMountainPointcloud("404_122", 1);
-    this.createMountainPointcloud("405_122", 1);
-    this.createMountainPointcloud("404_123", 1);
-    this.createMountainPointcloud("405_123", 1);
-    this.createMountainPointcloud("404_124", 1); 
-    this.createMountainPointcloud("405_124", 1); */
 
     // 404,124 405,124
     // 404,123 405,123

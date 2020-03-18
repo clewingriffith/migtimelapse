@@ -1,18 +1,24 @@
 # migtimelapse
 
+DEM and Satellite Data
+----------------------
+```
+pip install Pillow
+cd src
+python retrieveSatelliteTiles.lod13.py
+python processAscDem.py
+```
+
+
 Build Instructions
-==================
+------------------
 
 1. Install NPM.
-2. Open a command prompt in the directory in which you wish to create the app directory.
-3. Run npm install -g angular-cli to install the Angular CLI, and make the ng commands available globally.
-4. Run npm install three --save to install three.js.
-5. Run npm install @types/three --save-dev to install three.js typings (for TypeScript).
-6. npm install --save three-orbitcontrols-ts
-7. Run ng serve to start the app at http://localhost:4200.
+2. run ```npm install``` to get the dependencies needed.
+3. from the src directory
+    1. Serve the DEM and satellite files: ```python -m http.server```
+    1. Run the angular site: ```ng serve```
+    3. view the app at http://localhost:4200.
 
-DEM and Satellite Data
-======================
-pip install Pillow
 
 

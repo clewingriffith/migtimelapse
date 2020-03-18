@@ -52,6 +52,7 @@ export class CaveSurvey {
     public legsBySurveyStation = {}
     public legsByDate: SurveyLeg[] = [];
     public legsByStationBySurvey = {} //dictionary keyed first by survey, then by station
+    public legsBySurveyTree = {} //hierarchical version of legsByStationBySurvey
     // takes a set of objects representing move, line, label commands from the 3d image format
     constructor(items: Object[]) {
         var currentStationKey;
@@ -93,6 +94,17 @@ export class CaveSurvey {
                     this.legsByStationBySurvey[leg.survey]={};
                 }
                 this.storeLegByStation(leg, this.legsByStationBySurvey[leg.survey]);
+
+                const surveyHierarchy = leg.survey.split(".");
+                let surveySubtree = this.legsBySurveyTree;
+                for(let level of surveyHierarchy) {
+                    if(surveySubtree[level] === undefined) {
+                        surveySubtree[level] = {}
+                    }
+                    surveySubtree =  surveySubtree[level]
+                }
+                this.storeLegByStation(leg, surveySubtree);
+
                 currentStationKey = stationKey;
             }
             if(item['codetype'] === 'LABEL') {
@@ -206,6 +218,7 @@ export class CaveSurvey {
 
         }
         console.log("entrances: "+entrances);
+
     }
 
     exploreSurvey(surveyName:string, station: SurveyStation):SurveyStation[] {

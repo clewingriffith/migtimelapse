@@ -56,6 +56,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
 
     .add({
       targets: 'h1',
+      duration: 2000,
       color: [ { value: '#000', duration: 0}, { value: '#fff', easing: 'linear'} ],
       begin: function(anim) {
         slideshow.titletext = 'Votla Gora | The Hollow Mountain';
@@ -67,6 +68,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     })
     .add({
       targets: 'h2',
+      duration: 3000,
       color: [ { value: '#000', duration: 0}, { value: '#fff', easing: 'linear'} ],
       begin: function(anim) {
         slideshow.subtext = 'The caves of Tolminski Migovec';
@@ -79,7 +81,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
       altitudeAngle: 0,
       azimuthAngle: 0,
       cameraDistance: [10000,1500],
-      duration: 500, //5000
+      duration: 500,
       easing: "easeOutCubic",
       update: function() {
         world.updateFromViewParams()
@@ -108,17 +110,18 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
         world.renderFrame();
       }
     })
-    /*.add({
+    .add({
       targets: this.viewParams,
-      zmax: [ 1900, 1500 ] ,
+      //zmax: [ 1900, 1500 ] ,
+      zmax: 2500,
       azimuthAngle: 0,
-      duration: 20000,
+      duration: 2000,
       easing: 'linear',
       update: function() {
         world.updateFromViewParams()
         world.renderFrame();
       }
-    })*/
+    })
     /*.add({
       targets: this.viewParams,
       azimuthAngle: [0,2*Math.PI],
@@ -222,6 +225,18 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
         this.viewParams.terrainResolution = 10; break;
       case 'Digit3':
         this.viewParams.terrainResolution = 1; break;
+      case 'KeyT':
+          this.viewParams.terrainOpacity = 0.3; break;
+      case 'KeyC':
+        this.viewParams.showCave = !this.viewParams.showCave; break;
+      case 'Numpad8':
+        this.viewParams.caveOffset.y += 10; break;
+      case 'Numpad2':
+          this.viewParams.caveOffset.y -= 10; break;
+      case 'Numpad4':
+        this.viewParams.caveOffset.x -= 10; break;
+      case 'Numpad6':
+        this.viewParams.caveOffset.x += 10; break;
       
     }
     this.world.updateFromViewParams()
