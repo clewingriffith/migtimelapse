@@ -30,6 +30,7 @@
               "src/styles.scss"
             ],
             "scripts": [
+              "node_modules/chroma-js/chroma.min.js",
               "src/assets/js/datastream.js"
             ]
           },

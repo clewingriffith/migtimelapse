@@ -5,10 +5,14 @@ import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CaveLoaderService } from '../caveloader.service';
 import { DEMLoaderService } from '../demloader.service';
 import { CaveSurvey } from '../cavesurvey';
-import { SurveyStation } from '../cavesurvey';
+import { SurveyStation, SurveyLeg } from '../cavesurvey';
 import { GlobalViewParameters } from '../GlobalViewParameters';
-import { DoubleSide, Vector3, Texture } from 'three';
-
+import { DoubleSide, Vector3, Texture, BufferGeometry } from 'three';
+import { LineMaterial } from '../jsm/LineMaterial.js';
+import _ from 'lodash';
+import chroma from 'chroma-js';
+import { Observable, forkJoin, concat } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export type TerrainMode = 'wireframe' | 'texture' | 'none';
 
@@ -22,7 +26,9 @@ export class WorldComponent implements AfterViewInit {
 
   private camera: THREE.PerspectiveCamera;
   private controls: OrbitControls;
-  private survey: CaveSurvey;
+  public survey: CaveSurvey;
+  public surveyObjectsByName = {};
+  public surveyObjectsByYear = {};
   private get canvas() : HTMLCanvasElement {
     return this.canvasRef.nativeElement;
   }
@@ -48,6 +54,7 @@ export class WorldComponent implements AfterViewInit {
   private terrainGeometriesByResolution = { 1: [], 10:[], 100:[] };
 
   private terrainTextureLoader = new THREE.TextureLoader();
+  private terrainTextureObservables = [];
 
   private clippingPlanes: THREE.Plane[] = [];
   private zmaxPlane: THREE.Plane;
@@ -60,7 +67,9 @@ export class WorldComponent implements AfterViewInit {
   //private _terrainMode: TerrainMode;
   private scene: THREE.Scene;
   private group: THREE.Object3D;
-  //private terrainObject: THREE.Object3D;
+  private terrainGroup: THREE.Object3D;
+  private caveGroup: THREE.Object3D;
+  
   private _numLegsToDisplay = 0;
 
   public rotationSpeedX: number = 0.005;
@@ -164,13 +173,22 @@ export class WorldComponent implements AfterViewInit {
     }
     for(let tile in this.terrainObjectTiles) {
       let lod = this.terrainObjectTiles[tile];
-      this.group.add(lod);
+      this.terrainGroup.add(lod);
       lod.update(this.camera);
       //this.terrainObjectTiles[tile].forEach(t => this.group.add(t));
     }
 
-    this.legs.visible = this.viewParameters.showCave;
-    this.legs.position.set(this.viewParameters.caveOffset.x, this.viewParameters.caveOffset.y, this.viewParameters.caveOffset.z);
+    for(let year in this.surveyObjectsByYear) {
+      let obj:THREE.LineSegments = this.surveyObjectsByYear[year];
+      let partialYear = _.clamp(this.viewParameters.showYear - Number(year), 0, 1);
+      let geom = obj.geometry as BufferGeometry;
+      let numSegments = geom.getAttribute('position').array.length / 3; //each line has two sets of vertices. These are not drawn as a strip
+      let drawRange = partialYear * numSegments;
+      geom.setDrawRange(0, drawRange);
+    }
+    
+    this.caveGroup.visible = this.viewParameters.showCave;
+    this.caveGroup.position.set(this.viewParameters.caveOffset.x, this.viewParameters.caveOffset.y, this.viewParameters.caveOffset.z);
    
     // for(let res in this.terrainObjectByResolution) {
     //   this.terrainObjectByResolution[res].forEach(t => this.group.remove(t));
@@ -187,10 +205,13 @@ export class WorldComponent implements AfterViewInit {
 
 
   private loadTexture(tile: string) {
+     let textureObservable = new Observable();
+     this.terrainTextureObservables.push(textureObservable);
      this.terrainTextureLoader.load( 'assets/satellite/96TM/256/' + tile + '.jpg', (texture) => {
         let mat:THREE.MeshStandardMaterial = this.terrainMaterialByTile[tile];
         mat.map = texture;
         mat.needsUpdate = true;
+        textureObservable.next();
      } ); 
   }
 
@@ -204,9 +225,13 @@ export class WorldComponent implements AfterViewInit {
  }
 
   //use displacement map
-  private createTerrainTileGeometry(tile: string, resolution: number) {
+  //returns an observable which whien subscribed to, builds the 3d objects and returns
+  //an array of the tile number and resolution, eg. [26,31,100] 
+  private createTerrainTileGeometry(tile: string, resolution: number):Observable<number[]> {
     //arraybuffer is an array of heights
-    this.demloader.readDEMHeightData(tile, resolution).subscribe( arraybuffer => {
+    let observable:Observable<ArrayBuffer> = this.demloader.readDEMHeightData(tile, resolution);
+    return observable.pipe(map(arraybuffer => {
+     
       const geometry = new THREE.BufferGeometry();
 
       const demHeightFloatArray = new Float32Array(arraybuffer); 
@@ -261,8 +286,8 @@ export class WorldComponent implements AfterViewInit {
 	    }
       
       geometry.setIndex(indices);
-      geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(demPointArrayBuffer), 3 ) );
-      geometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+      geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(demPointArrayBuffer), 3 ) );
+      geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
       geometry.computeVertexNormals();
 
       //the following 3 lines shift the center position of the tile to it's middle and 1000m up. 
@@ -302,8 +327,10 @@ export class WorldComponent implements AfterViewInit {
 
       terrainLOD.addLevel(terrainObject, distanceByRes[resolution]); //scale so 10m res is displayed at 2km or closer
 
+      return [tilex,tiley,resolution];
+    }));
 
-    });
+    //return observable;
   }
 
   newTerrainMaterial():THREE.MeshStandardMaterial {
@@ -324,11 +351,10 @@ export class WorldComponent implements AfterViewInit {
         this.survey = new CaveSurvey(fileItems);
         // let texture = new THREE.TextureLoader().load(this.texture);
         //var material = new THREE.PointsMaterial( { color: 0xffffff } );
-        var material = new THREE.LineBasicMaterial( { 
-          color: 0xffffff
-         } );
+  
+        //material.resolution.set( window.innerWidth, window.innerHeight );
 
-        var geometry = new THREE.BufferGeometry();
+        //var geometry = new THREE.BufferGeometry();
         
 
         var surveyStations: SurveyStation[];
@@ -340,41 +366,109 @@ export class WorldComponent implements AfterViewInit {
           //}
         });
 
+        let surveyFilterKeys = ["garden", "system", "prim", "s_monatip", "planika", "u-bend", "m2"];
+
+        let undergroundLegs = this.survey.legsByDate.filter( leg => leg.isUnderground() /*&& !leg.flags.includes("DUPLICATE")*/);
         
 
-        var legIndices = [];
-        this.survey.legsByDate.forEach( leg => {
-          if(leg.isUnderground()) { 
-            legIndices.push(leg.leg[0].i); legIndices.push(leg.leg[1].i);
-          } 
-        });
+        let filteredSurvey:SurveyLeg[] = undergroundLegs.filter(
+          (leg: SurveyLeg) => { 
+            let toplevelsurvey = leg.survey.split('.')[0];
+            return surveyFilterKeys.includes(toplevelsurvey);
+            
+          });
 
+       /* let currentYearSurvey = filteredSurvey.filter(
+          (leg: SurveyLeg) => { 
+        
+            return leg.date.getFullYear() === 2000;;
+            
+          }
+        );*/
+
+        let surveysByYear= _.groupBy(filteredSurvey, (leg:SurveyLeg) => {
+          return leg.date.getFullYear();
+        })
+
+        let surveysByName = _.groupBy(filteredSurvey, 'survey');
+         
+        
+        //let p = _.toPairs(filteredSurvey);       
+/*
+        var legIndices = [];
+        for(let leg of filteredSurvey) {
+          if(leg.length() > 30) {
+            console.log(leg);
+            console.log(leg.length())
+          }
+          legIndices.push(leg.leg[0].i); legIndices.push(leg.leg[1].i);
+        }
+        */
+        //for simplicity, use the same position everywhere. The legs all have an
+        //index into the same shared position array
         const vertexArray = new Float32Array(this.vertices);
         
-       // itemSize = 3 because there are 3 values (components) per vertex
-        geometry.setIndex(legIndices);
-        geometry.addAttribute( 'position', new THREE.BufferAttribute( vertexArray, 3 ) );
-        geometry.computeBoundingSphere();
-        geometry.computeBoundingBox();
+        this.surveyObjectsByYear = _.mapValues(surveysByYear, (s:SurveyLeg[]) => {
+          let year = s[0].date.getFullYear();
+          let legIndices = [];
+          for(let leg of s) {
+            legIndices.push(leg.leg[0].i);
+            legIndices.push(leg.leg[1].i);
+          }
+          
+           // itemSize = 3 because there are 3 values (components) per vertex
+          let surveyGeometry = new THREE.BufferGeometry();
+          surveyGeometry.setIndex(legIndices);
+          surveyGeometry.setAttribute( 'position', new THREE.BufferAttribute( vertexArray, 3 ) );
+          surveyGeometry.computeBoundingSphere();
+          surveyGeometry.computeBoundingBox();
+          let nonindexed = surveyGeometry.toNonIndexed();
+
+          let spectrum = chroma.scale('RdYlBu').domain([1994,2018]);
+          let rgb = spectrum(year).gl();
+          let surveyColor = new THREE.Color();
+          surveyColor.setRGB(rgb[0], rgb[1], rgb[2]);
+          //surveyColor.setHSL(hue, 0.8,0.5);
+
+          let surveyMaterial = new THREE.LineBasicMaterial( { 
+            //color: new THREE.Color("hsl(" + hue + ",80%, 50%)")
+            color: surveyColor
+           } );
+
+          let surveyObj:THREE.Object3D = new THREE.LineSegments(nonindexed, surveyMaterial)
+          return surveyObj;
+        });
+
+
+      //  // itemSize = 3 because there are 3 values (components) per vertex
+      //   geometry.setIndex(legIndices);
+      //   geometry.addAttribute( 'position', new THREE.BufferAttribute( vertexArray, 3 ) );
+      //   geometry.computeBoundingSphere();
+      //   geometry.computeBoundingBox();
 
         
         //const c = geometry.boundingSphere.center;
         //console.log(c);
 
         //test center of non-indexed version
-        const nonindexed = geometry.toNonIndexed();
-        nonindexed.computeBoundingSphere();
-        const c = nonindexed.boundingSphere.center;
+        // const nonindexed = geometry.toNonIndexed();
+        // nonindexed.computeBoundingSphere();
+        // const c = nonindexed.boundingSphere.center;
 
 
         //geometry.translate(c.x, c.y, c.z);
         //geometry.scale(0.1, 0.1, 0.1);
         // geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         
-        this.legs = new THREE.LineSegments( nonindexed, material );
+        //this.legs = new THREE.LineSegments( nonindexed, material );
                
         //Keep out of group until we want to display ## IMPORTANT
-        this.group.add(this.legs);
+        _.values(this.surveyObjectsByYear).forEach(surveyObj => {
+          this.caveGroup.add(surveyObj);
+        });
+        
+        this.group.add(this.caveGroup);
+        //this.group.add(this.legs);
         
         
         
@@ -382,13 +476,19 @@ export class WorldComponent implements AfterViewInit {
         //this.group.add(box);
       
 
-        this.camera.position.set(c.x,c.y,c.z+nonindexed.boundingSphere.radius);
+        this.camera.position.set(403000,123000,2500);
+        //this.camera.position.set(c.x,c.y,c.z+nonindexed.boundingSphere.radius);
         this.camera.up.set(0,0,1);
-        this.camera.lookAt(c.x,c.y,c.z);
-        this.controls.target = new THREE.Vector3(c.x,c.y,c.z);
+        this.camera.lookAt(403000,123000,1500);
+        
+        this.controls.target  = new THREE.Vector3(403000,123000,1500);
+        //this.controls.target = new THREE.Vector3(c.x,c.y,c.z);
 
-        this.viewParameters.targetPosition = new THREE.Vector3(c.x,c.y,c.z);
+        //let target = new THREE.Box3().setFromObject(this.surveyObjectsByName["garden.garden-ent.pico"]).getCenter(new THREE.Vector3());
+        let target = new THREE.Box3().setFromObject(this.surveyObjectsByYear["2000"]).getCenter(new THREE.Vector3());
 
+
+        this.viewParameters.targetPosition = target;
         this.controls.update();
 
     });
@@ -412,13 +512,15 @@ export class WorldComponent implements AfterViewInit {
     this.scene.fog = new THREE.FogExp2('#92bbff', 0.00015);
 
     this.group = new THREE.Object3D();
+    this.caveGroup = new THREE.Object3D();
+    this.terrainGroup = new THREE.Object3D();
     //this.group.rotation.x = -Math.PI / 2;
     
     this.scene.add(this.group);
 
     let ground = new THREE.PlaneGeometry(30000,30000, 1, 1);
-    ground.translate(403000,123000,0);
-    let groundMesh = new THREE.Mesh(ground, new THREE.MeshBasicMaterial( { "color": "#405043", "flatShading":true }));
+    ground.translate(403000,124000,0);
+    let groundMesh = new THREE.Mesh(ground, new THREE.MeshBasicMaterial( { "color": "#405043", "flatShading":true, "fog":null }));
     this.scene.add(groundMesh);    
 
 
@@ -565,7 +667,7 @@ export class WorldComponent implements AfterViewInit {
    */
   public ngAfterViewInit() {
     this.createScene();
-    /* temporarily remove from view
+    // /* temporarily remove from view
     //get a list of the tiles
     let extent = this.viewParameters.terrainTileExtent[100];
     let tileKeys = [];
@@ -585,19 +687,31 @@ export class WorldComponent implements AfterViewInit {
 
 
     for (let resolution of [100,10,1]) {
+      let tileGeometryObservables = [];
       let extent = this.viewParameters.terrainTileExtent[resolution];
       for (let i = extent.x[0]; i <= extent.x[1]; i++) {
         for (let j = extent.y[0]; j <= extent.y[1]; j++) {
-          this.createTerrainTileGeometry(i + "_" + j, resolution);
+          let tileGeometryObservable = this.createTerrainTileGeometry(i + "_" + j, resolution);
+          tileGeometryObservables.push(tileGeometryObservable);
         }
       }
+      let geometryDataForResolution = forkJoin(tileGeometryObservables);
+      geometryDataForResolution.subscribe( {
+         next(x) { console.log('loaded tile ' + x); },
+      error(err) { console.error('something wrong occurred: ' + err); },
+      complete() { console.log('done loading tiles for resolution ' + resolution); }
+      }
+      );
     }
  
 
     for(let tile of tileKeys) {
       this.loadTexture(tile);
       this.loadNormalMap(tile);
-    }*/
+    }
+
+    this.group.add(this.terrainGroup);
+    //*/
 
 
     // 404,124 405,124

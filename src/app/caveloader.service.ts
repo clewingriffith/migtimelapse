@@ -320,7 +320,8 @@ export class CaveLoaderService {
         let items = [];
         while(stream.isEof() == false) {
           const item = this.readItem(stream);
-          items.push(item); // console.log(item);
+          items.push(item); 
+          //console.log(item);
         }
 
         return items;

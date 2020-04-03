@@ -24,6 +24,8 @@ export class GlobalViewParameters {
     public terrainOpacity: number = 1;
     public terrainWireframe: boolean  = false;
     public showCave: boolean = true;
+    public showYear: number = 1994.0; // a decimal value like 2012.23.  The decimal portion represents an amount of exploration done that year between 0 and 1.
+    
 
     public caveOffset = new THREE.Vector3(-350,480,0.0);
 

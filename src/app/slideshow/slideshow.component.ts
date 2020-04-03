@@ -2,7 +2,8 @@ import { Component, OnInit, Input, AfterViewInit, ViewChild, HostListener } from
 import { WorldComponent } from '../world/world.component';
 import anime  from 'animejs';
 import { GlobalViewParameters } from '../GlobalViewParameters';
-import { RGBA_PVRTC_2BPPV1_Format } from 'three';
+import { RGBA_PVRTC_2BPPV1_Format, Vector3 } from 'three';
+import * as THREE from 'three';
 
 @Component({
   selector: 'app-slideshow',
@@ -51,6 +52,10 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
                  { value: '0', easing: 'linear', duration: 1000}];
 
     var slideshow = this;
+
+    
+
+
     // Add children 
     this.timeline
 
@@ -92,7 +97,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
       targets: this.viewParams,
       terrainOpacity: 1,
       altitudeAngle: [0,Math.PI/2-0.6],
-      duration: 500,
+      duration: 5000,
       easing: "easeOutCubic",
       update: function() {
         world.updateFromViewParams()
@@ -103,7 +108,7 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
       targets: this.viewParams,
       terrainOpacity: [1.0,1.0],
       azimuthAngle: 2*Math.PI,
-      duration: 500,
+      duration: 5000,
       easing: "easeInOutCubic",
       update: function() {
         world.updateFromViewParams()
@@ -113,9 +118,33 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
     .add({
       targets: this.viewParams,
       //zmax: [ 1900, 1500 ] ,
-      zmax: 2500,
+      cameraDistance: 500,
       azimuthAngle: 0,
-      duration: 2000,
+      //altitudeAngle: Math.PI/2+0.1,
+      duration: 20000,
+      easing: 'linear',
+      update: function() {
+        world.updateFromViewParams()
+        world.renderFrame();
+      }
+    })
+    .add({
+      targets: this.viewParams,
+      cameraDistance: 260,
+      azimuthAngle: 0.4,
+      altitudeAngle: Math.PI/2-0.2,
+      duration: 5000,
+      easing: 'linear',
+      update: function() {
+        world.updateFromViewParams()
+        world.renderFrame();
+      }
+    })
+    .add({
+      targets: this.viewParams,
+      showYear: [1994, 2018],
+      duration: 80000,
+      loop: 4,
       easing: 'linear',
       update: function() {
         world.updateFromViewParams()
@@ -226,7 +255,12 @@ export class SlideshowComponent implements OnInit, AfterViewInit {
       case 'Digit3':
         this.viewParams.terrainResolution = 1; break;
       case 'KeyT':
-          this.viewParams.terrainOpacity = 0.3; break;
+          if(this.viewParams.terrainOpacity == 0.3) {
+            this.viewParams.terrainOpacity = 1;
+          } else {
+            this.viewParams.terrainOpacity = 0.3;
+          }
+          break;
       case 'KeyC':
         this.viewParams.showCave = !this.viewParams.showCave; break;
       case 'Numpad8':

@@ -1,3 +1,4 @@
+//import { SSL_OP_NO_QUERY_MTU } from 'constants';
 
 
 export class SurveyStation {
@@ -26,7 +27,7 @@ export class SurveyStation {
 
 export class SurveyLeg {
     public explored;
-    constructor(public date, public survey:string, public flags:string[], public leg:SurveyStation[]) {
+    constructor(public date:Date, public survey:string, public flags:string[], public leg:SurveyStation[]) {
         this.explored=false;
         if(!flags) {
             this.flags=[];
@@ -43,12 +44,19 @@ export class SurveyLeg {
             return this.leg[0];
         }
     }
+    length():number {
+        let dx=this.leg[1].x - this.leg[0].x;
+        let dy=this.leg[1].y- this.leg[0].y;
+        let dz=this.leg[1].z- this.leg[0].z;
+        return Math.sqrt(dx*dx+dy*dy+dz*dz);
+    }
 }
 
 export class CaveSurvey {
 
     public surveyStations = {};
     public surveyLegs: SurveyStation[][] = [];
+    public surveyLegObjects: SurveyLeg[] = [];
     public legsBySurveyStation = {}
     public legsByDate: SurveyLeg[] = [];
     public legsByStationBySurvey = {} //dictionary keyed first by survey, then by station
@@ -84,11 +92,17 @@ export class CaveSurvey {
                 }
                 const startStation = this.surveyStations[currentStationKey];
                 const endStation = this.surveyStations[stationKey];
+
                 this.surveyLegs.push([startStation, endStation]);
                 var leg = new SurveyLeg(currentDate, currentSurvey, item['flags'], [startStation, endStation]);
-                if(leg.isUnderground() === false) {
+                
+                /*if(leg.isUnderground() === false) {
                     continue;
                 }
+                if(leg.length() > 100) {
+                    console.log(leg);
+                }*/
+                this.surveyLegObjects.push(leg);
                 this.storeLegByStation(leg, this.legsBySurveyStation);
                 if(!this.legsByStationBySurvey[leg.survey]) {
                     this.legsByStationBySurvey[leg.survey]={};
@@ -130,11 +144,13 @@ export class CaveSurvey {
 
         //Find entrances
         
-        var entrances = Object.values(this.surveyStations).filter(function(s:SurveyStation) {
-            return s.flags.includes('ENTRANCE') && s.flags.includes('UNDERGROUND');
-        });
+
+        var entrances = Object.values(this.surveyStations).filter( 
+            (s:SurveyStation) =>  { 
+                return s.flags.includes('ENTRANCE') && s.flags.includes('UNDERGROUND');
+            });
         var legsBySurveyStation = this.legsBySurveyStation;
-        var entranceLegs = entrances.map(function(e:SurveyStation) {
+        var entranceLegs = entrances.map( (e:SurveyStation) => {
             var connectedToEntrance = legsBySurveyStation[e.key()];
             return connectedToEntrance && connectedToEntrance.filter(function(l) {return l.isUnderground()});
         });
